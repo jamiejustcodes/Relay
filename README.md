@@ -41,12 +41,12 @@ Think of it as **Google Lens for the entire desktop**, built with **.NET 10 (WPF
 ```text
 Relay/
 ├── src/
-│   ├── ScreenLens.Core/              # Domain models, enums (IntentType), and contracts
+│   ├── Relay.Core/                   # Domain models, enums (IntentType), and contracts
 │   │   ├── Interfaces/               # IAiProvider, IScreenCaptureService, IHotkeyService, etc.
 │   │   └── Models/                   # CaptureRegion, ScreenContext, AiAnalysisRequest, etc.
 │   │
-│   ├── ScreenLens.Infrastructure/    # Concrete implementations & Win32 Interop
-│   │   ├── Ai/                       # Gemini Flash-Lite Multimodal SSE streaming client
+│   ├── Relay.Infrastructure/         # Concrete implementations & Win32 Interop
+│   │   ├── Ai/                       # Gemini Flash-Lite & Ollama Multimodal SSE streaming clients
 │   │   ├── ScreenCapture/            # High-performance GDI+ BitBlt & DPI conversion
 │   │   ├── Hotkeys/                  # Win32 RegisterHotKey with message hook
 │   │   ├── WindowContext/            # GetForegroundWindow & process metadata
@@ -55,14 +55,14 @@ Relay/
 │   │   ├── Search/                   # Web search integration service
 │   │   └── Data/                     # EF Core SQLite DbContext & repositories
 │   │
-│   ├── ScreenLens.UI/                # WPF Windows 11 Desktop Application
+│   ├── Relay.UI/                     # WPF Windows 11 Desktop Application
 │   │   ├── Controls/                 # Streaming Markdown viewer, badges, cards
 │   │   ├── Styles/                   # Colors, typography, Fluent dark theme
 │   │   ├── ViewModels/               # MVVM ViewModels (CommunityToolkit.Mvvm)
 │   │   └── Views/                    # Overlay, Floating Result, Settings, History windows
 │   │
-│   └── ScreenLens.Tests/             # Unit & integration test suite (xUnit, FluentAssertions, Moq)
-└── ScreenLens.sln
+│   └── Relay.Tests/                  # Unit & integration test suite (xUnit, FluentAssertions, Moq)
+└── Relay.slnx
 ```
 
 ---
@@ -72,15 +72,15 @@ Relay/
 ### Prerequisites
 * Windows 10 (Version 19041+) or Windows 11
 * [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-* A [Google Gemini API Key](https://aistudio.google.com/)
+* A [Google Gemini API Key](https://aistudio.google.com/) or a local Ollama instance
 
 ### Build & Run
 1. Run with `run.cmd` or build from CLI:
    ```bash
    dotnet build
-   dotnet run --project src/ScreenLens.UI/ScreenLens.UI.csproj
+   dotnet run --project src/Relay.UI/Relay.UI.csproj
    ```
-2. Enter your Gemini API key in the **Settings** dialog.
+2. Enter your Gemini API key in the **Settings** dialog or choose Local AI (Ollama).
 3. Press `Ctrl + Space` anywhere in Windows to start analyzing your screen!
 
 ---

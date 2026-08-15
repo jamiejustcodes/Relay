@@ -1,0 +1,352 @@
+<Window x:Class="Relay.UI.Views.HistoryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:Relay.UI.ViewModels"
+        xmlns:controls="clr-namespace:Relay.UI.Controls"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance vm:HistoryViewModel}"
+        Title="Relay History"
+        Icon="/Assets/relay.ico"
+        WindowStartupLocation="CenterScreen"
+        Width="920" Height="660"
+        Background="{StaticResource BgCanvasBrush}"
+        Foreground="{StaticResource TextPrimaryBrush}">
+
+    <Window.Resources>
+        <controls:NullToVisibilityConverter x:Key="NullToVis" />
+        <controls:BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <controls:CountToVisibilityConverter x:Key="CountToVis" />
+        <controls:Base64ToImageConverter x:Key="Base64ToImageConverter" />
+        <controls:IntentToBrushConverter x:Key="IntentToBrushConverter" />
+        <controls:IntentToForegroundConverter x:Key="IntentToForegroundConverter" />
+
+        <!-- Modern Dark ListBoxItem Style -->
+        <Style TargetType="ListBoxItem">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="ItemBorder"
+                                Background="{StaticResource BgCardBrush}"
+                                BorderBrush="{StaticResource GlassBorderSubtleBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="10">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource BgCardHoverBrush}" />
+                                <Setter TargetName="ItemBorder" Property="BorderBrush" Value="{StaticResource AccentPrimaryGlowBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#252D42" />
+                                <Setter TargetName="ItemBorder" Property="BorderBrush" Value="{StaticResource AccentPrimaryBrush}" />
+                                <Setter TargetName="ItemBorder" Property="BorderThickness" Value="1.5" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <!-- 0: Header -->
+            <RowDefinition Height="Auto" />
+            <!-- 1: Body Split View -->
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- 0: Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+                <StackPanel Orientation="Horizontal">
+                    <Border Width="28" Height="28" Background="{StaticResource AccentPrimaryBrush}" CornerRadius="6" Margin="0,0,10,0">
+                        <TextBlock Text="🕒" Foreground="#FFFFFF" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="Analysis History" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Text="Search and review previous screen analyses, explanations, and code answers." FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="38,2,0,0" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Style="{StaticResource SubtleActionButtonStyle}"
+                        Command="{Binding ClearAllCommand}"
+                        Content="Clear All"
+                        Margin="0,0,8,0" />
+                <Button Style="{StaticResource SubtleActionButtonStyle}"
+                        Click="OnCloseClick"
+                        Content="Close" />
+            </StackPanel>
+        </Grid>
+
+        <!-- 1: Split View (Master / Detail) -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <!-- Master: History List -->
+                <ColumnDefinition Width="340" />
+                <!-- Splitter -->
+                <ColumnDefinition Width="14" />
+                <!-- Detail: Selected Item View -->
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Left: Search & History List -->
+            <Border Grid.Column="0"
+                    Background="{StaticResource BgPanelBrush}"
+                    BorderBrush="{StaticResource GlassBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Search Input -->
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <TextBox Style="{StaticResource ModernTextBoxStyle}"
+                                 Text="{Binding SearchFilter, UpdateSourceTrigger=PropertyChanged}"
+                                 KeyDown="OnSearchKeyDown"
+                                 Height="34"
+                                 ToolTip="Search history... (Press Enter)" />
+                    </Grid>
+
+                    <!-- Empty State in List -->
+                    <Border Grid.Row="1"
+                            Visibility="{Binding HasItems, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Padding="20">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="📭" FontSize="28" HorizontalAlignment="Center" Margin="0,0,0,8" />
+                            <TextBlock Text="No history yet"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,0,0,4" />
+                            <TextBlock Text="Press Ctrl + Space anywhere on Windows to analyze your screen."
+                                       FontSize="11"
+                                       Foreground="{StaticResource TextTertiaryBrush}"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- List of History Items -->
+                    <ListBox Grid.Row="1"
+                             ItemsSource="{Binding Items}"
+                             SelectedItem="{Binding SelectedItem}"
+                             Visibility="{Binding HasItems, Converter={StaticResource BoolToVis}}"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Top Line: Intent & Timestamp -->
+                                    <Grid Grid.Row="0" Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0"
+                                                HorizontalAlignment="Left"
+                                                Background="{Binding Intent, Converter={StaticResource IntentToBrushConverter}}"
+                                                CornerRadius="4"
+                                                Padding="6,2">
+                                            <TextBlock Text="{Binding Intent}"
+                                                       FontSize="10"
+                                                       FontWeight="Bold"
+                                                       Foreground="{Binding Intent, Converter={StaticResource IntentToForegroundConverter}}" />
+                                        </Border>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Timestamp, StringFormat='{}{0:MM/dd HH:mm}'}"
+                                                   FontSize="10"
+                                                   Foreground="{StaticResource TextTertiaryBrush}"
+                                                   VerticalAlignment="Center" />
+                                    </Grid>
+
+                                    <!-- Middle Line: Title -->
+                                    <TextBlock Grid.Row="1"
+                                               Text="{Binding Title}"
+                                               FontWeight="SemiBold"
+                                               FontSize="13"
+                                               Foreground="{StaticResource TextPrimaryBrush}"
+                                               TextTrimming="CharacterEllipsis"
+                                               Margin="0,0,0,3" />
+
+                                    <!-- Bottom Line: App & Summary snippet -->
+                                    <TextBlock Grid.Row="2"
+                                               Text="{Binding ApplicationName}"
+                                               FontSize="11"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               TextTrimming="CharacterEllipsis" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+
+            <!-- Right: Detail View -->
+            <Border Grid.Column="2"
+                    Background="{StaticResource BgPanelBrush}"
+                    BorderBrush="{StaticResource GlassBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="16">
+                <Grid>
+                    <!-- Empty Detail State -->
+                    <Border Visibility="{Binding SelectedItem, Converter={StaticResource NullToVis}, ConverterParameter=Invert}"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="🔍" FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,10" />
+                            <TextBlock Text="Select an analysis from the list"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontSize="15"
+                                       FontWeight="SemiBold"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,0,0,4" />
+                            <TextBlock Text="View full AI answers, generated code, and screen context."
+                                       Foreground="{StaticResource TextTertiaryBrush}"
+                                       FontSize="12"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Item Details -->
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  Visibility="{Binding SelectedItem, Converter={StaticResource NullToVis}}">
+                        <StackPanel Margin="0,0,8,0">
+                            <!-- Top Badge & Actions Bar -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Border Background="{Binding SelectedItem.Intent, Converter={StaticResource IntentToBrushConverter}}"
+                                            CornerRadius="4"
+                                            Padding="8,3"
+                                            Margin="0,0,8,0">
+                                        <TextBlock Text="{Binding SelectedItem.Intent}"
+                                                   FontSize="11"
+                                                   FontWeight="Bold"
+                                                   Foreground="{Binding SelectedItem.Intent, Converter={StaticResource IntentToForegroundConverter}}" />
+                                    </Border>
+                                    <TextBlock Text="{Binding SelectedItem.ApplicationName}"
+                                               FontSize="12"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource AccentCyanBrush}"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,8,0" />
+                                    <TextBlock Text="•" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding SelectedItem.Timestamp, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}"
+                                               FontSize="11"
+                                               Foreground="{StaticResource TextTertiaryBrush}"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <Button Style="{StaticResource SubtleActionButtonStyle}"
+                                            Command="{Binding CopySelectedContentCommand}"
+                                            Content="📋 Copy Markdown"
+                                            Margin="0,0,6,0" />
+                                    <Button Style="{StaticResource CloseWindowButtonStyle}"
+                                            Command="{Binding DeleteItemCommand}"
+                                            CommandParameter="{Binding SelectedItem}"
+                                            ToolTip="Delete this record">
+                                        <TextBlock Text="🗑" FontSize="12" />
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Title -->
+                            <TextBlock Text="{Binding SelectedItem.Title}"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,10" />
+
+                            <!-- Optional User Prompt / Question -->
+                            <Border Background="#156366F1"
+                                    BorderBrush="#306366F1"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Padding="10,6"
+                                    Margin="0,0,0,10"
+                                    Visibility="{Binding SelectedItem.UserQuestion, Converter={StaticResource NullToVis}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="💬 " FontSize="12" />
+                                    <TextBlock Text="{Binding SelectedItem.UserQuestion}"
+                                               FontSize="12"
+                                               FontWeight="Medium"
+                                               Foreground="{StaticResource TextPrimaryBrush}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Executive Summary -->
+                            <Border Background="{StaticResource BgCardBrush}"
+                                    BorderBrush="{StaticResource GlassBorderSubtleBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="12"
+                                    Margin="0,0,0,14"
+                                    Visibility="{Binding SelectedItem.Summary, Converter={StaticResource NullToVis}}">
+                                <TextBlock Text="{Binding SelectedItem.Summary}"
+                                           FontSize="13"
+                                           LineHeight="18"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </Border>
+
+                            <!-- Thumbnail Preview (if present) -->
+                            <Border Background="{StaticResource BgCardBrush}"
+                                    BorderBrush="{StaticResource GlassBorderSubtleBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="6"
+                                    Margin="0,0,0,14"
+                                    HorizontalAlignment="Left"
+                                    MaxHeight="200"
+                                    Visibility="{Binding SelectedItem.ThumbnailBase64, Converter={StaticResource NullToVis}}">
+                                <Image Source="{Binding SelectedItem.ThumbnailBase64, Converter={StaticResource Base64ToImageConverter}}"
+                                       Stretch="Uniform"
+                                       MaxHeight="180" />
+                            </Border>
+
+                            <!-- Full Response Markdown -->
+                            <controls:MarkdownViewerControl Markdown="{Binding SelectedItem.MarkdownResponse}" />
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>
