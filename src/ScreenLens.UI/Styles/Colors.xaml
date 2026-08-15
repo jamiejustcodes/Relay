@@ -1,0 +1,44 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Backgrounds -->
+    <SolidColorBrush x:Key="BgCanvasBrush" Color="#0B0D14" />
+    <SolidColorBrush x:Key="BgPanelBrush" Color="#131722" />
+    <SolidColorBrush x:Key="BgPanelSubtleBrush" Color="#1A1F2C" />
+    <SolidColorBrush x:Key="BgCardBrush" Color="#1F2536" />
+    <SolidColorBrush x:Key="BgCardHoverBrush" Color="#283046" />
+    <SolidColorBrush x:Key="BgInputBrush" Color="#161B26" />
+
+    <!-- Glassmorphic Translucent Brushes -->
+    <SolidColorBrush x:Key="GlassBackgroundBrush" Color="#EE131722" />
+    <SolidColorBrush x:Key="GlassBorderBrush" Color="#2E374E" />
+    <SolidColorBrush x:Key="GlassBorderSubtleBrush" Color="#1F2636" />
+    <SolidColorBrush x:Key="GlassHighlightBrush" Color="#30FFFFFF" />
+
+    <!-- Text & Foreground -->
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F8FAFC" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#94A3B8" />
+    <SolidColorBrush x:Key="TextTertiaryBrush" Color="#64748B" />
+    <SolidColorBrush x:Key="TextMutedBrush" Color="#475569" />
+
+    <!-- Accent & Glowing Palettes -->
+    <SolidColorBrush x:Key="AccentPrimaryBrush" Color="#6366F1" />
+    <SolidColorBrush x:Key="AccentPrimaryHoverBrush" Color="#7C7EF4" />
+    <SolidColorBrush x:Key="AccentPrimaryGlowBrush" Color="#4D6366F1" />
+    
+    <SolidColorBrush x:Key="AccentCyanBrush" Color="#06B6D4" />
+    <SolidColorBrush x:Key="AccentEmeraldBrush" Color="#10B981" />
+    <SolidColorBrush x:Key="AccentAmberBrush" Color="#F59E0B" />
+    <SolidColorBrush x:Key="AccentRoseBrush" Color="#F43F5E" />
+    <SolidColorBrush x:Key="AccentPurpleBrush" Color="#A855F7" />
+
+    <!-- Overlay Selection Brushes -->
+    <SolidColorBrush x:Key="OverlayDimBrush" Color="#75000000" />
+    <SolidColorBrush x:Key="SelectionBorderBrush" Color="#6366F1" />
+    <SolidColorBrush x:Key="SelectionGlowBrush" Color="#80818CF8" />
+
+    <!-- Code Block Background -->
+    <SolidColorBrush x:Key="CodeBgBrush" Color="#0A0C10" />
+    <SolidColorBrush x:Key="CodeBorderBrush" Color="#202636" />
+
+</ResourceDictionary>

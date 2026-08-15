@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ScreenLens.Core/ScreenLens.Core.csproj" />
+    <Project Path="src/ScreenLens.Infrastructure/ScreenLens.Infrastructure.csproj" />
+    <Project Path="src/ScreenLens.UI/ScreenLens.UI.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ScreenLens.Tests/ScreenLens.Tests.csproj" />
+  </Folder>
+</Solution>
