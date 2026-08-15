@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Drawing;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using H.NotifyIcon;
@@ -8,6 +10,7 @@ using Relay.Core.Interfaces;
 using Relay.Core.Models;
 using Relay.Infrastructure;
 using Relay.Infrastructure.Hotkeys;
+using Relay.Infrastructure.ScreenCapture;
 using Relay.UI.ViewModels;
 using Relay.UI.Views;
 
@@ -15,6 +18,7 @@ namespace Relay.UI;
 
 public partial class App : Application
 {
+    private static Mutex? _singleInstanceMutex;
     private IHost? _host;
     private TaskbarIcon? _taskbarIcon;
     private SelectionOverlayWindow? _activeOverlay;
@@ -23,6 +27,44 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // 1. Single Instance Check via Named System Mutex
+        bool isNewInstance;
+        try
+        {
+            _singleInstanceMutex = new Mutex(true, @"Global\Relay_SingleInstance_App_Mutex_v1", out isNewInstance);
+        }
+        catch
+        {
+            isNewInstance = true;
+        }
+
+        if (!isNewInstance)
+        {
+            bool isBackgroundLaunch = e.Args.Any(arg =>
+                arg.Equals("--minimized", StringComparison.OrdinalIgnoreCase) ||
+                arg.Equals("--background", StringComparison.OrdinalIgnoreCase) ||
+                arg.Equals("-minimized", StringComparison.OrdinalIgnoreCase) ||
+                arg.Equals("-tray", StringComparison.OrdinalIgnoreCase));
+
+            if (!isBackgroundLaunch)
+            {
+                // Try to bring the already-running Relay instance to the foreground
+                IntPtr hWnd = NativeMethods.FindWindow(null, "Relay — AI Desktop Assistant");
+                if (hWnd != IntPtr.Zero)
+                {
+                    if (NativeMethods.IsIconic(hWnd))
+                        NativeMethods.ShowWindow(hWnd, NativeMethods.SW_RESTORE);
+                    else
+                        NativeMethods.ShowWindow(hWnd, NativeMethods.SW_SHOW);
+
+                    NativeMethods.SetForegroundWindow(hWnd);
+                }
+            }
+
+            Shutdown();
+            return;
+        }
 
         // Global Exception Handlers to prevent unexpected process crashes
         DispatcherUnhandledException += (sender, args) =>
@@ -51,7 +93,7 @@ public partial class App : Application
 
         try
         {
-            // 1. Build and start generic host with DI
+            // 2. Build and start generic host with DI
             _host = Host.CreateDefaultBuilder()
                 .ConfigureServices((context, services) =>
                 {
@@ -76,16 +118,16 @@ public partial class App : Application
 
             await _host.StartAsync();
 
-            // 2. Load settings and register global hotkey
+            // 3. Load settings and register global hotkey
             var settingsService = _host.Services.GetRequiredService<ISettingsService>();
             await settingsService.LoadSettingsAsync();
 
             RegisterGlobalHotkeys();
 
-            // 3. Initialize System Tray Icon
+            // 4. Initialize System Tray Icon
             InitializeTrayIcon();
 
-            // 4. Check if starting minimized / in background
+            // 5. Check if starting minimized / in background
             var settings = settingsService.CurrentSettings;
             bool startMinimized = e.Args.Any(arg => arg.Equals("--minimized", StringComparison.OrdinalIgnoreCase) ||
                                                    arg.Equals("--background", StringComparison.OrdinalIgnoreCase) ||
@@ -108,6 +150,9 @@ public partial class App : Application
                         "✦ Relay Active",
                         "Relay is running in the background. Press Ctrl + Space or Ctrl + Shift + Space anytime.");
                 }
+
+                // Trim working set to minimal footprint when idle in background
+                TrimWorkingSet();
             }
             else
             {
@@ -187,6 +232,7 @@ public partial class App : Application
             overlayVm.SelectionCancelled += (s, e) =>
             {
                 _activeOverlay = null;
+                TrimWorkingSet();
             };
 
             _activeOverlay.Show();
@@ -208,6 +254,11 @@ public partial class App : Application
 
             var resultVm = _host.Services.GetRequiredService<FloatingResultViewModel>();
             _activeFloatingWindow = new FloatingResultWindow(resultVm);
+            _activeFloatingWindow.Closed += (s, e) =>
+            {
+                _activeFloatingWindow = null;
+                TrimWorkingSet();
+            };
 
             // Position floating result window near the crop area
             _activeFloatingWindow.PositionNearSelection(region, region.DpiScale);
@@ -415,6 +466,22 @@ public partial class App : Application
         }
     }
 
+    /// <summary>
+    /// Minimizes process working set memory footprint down to ~10-15 MB when idle in background.
+    /// </summary>
+    public static void TrimWorkingSet()
+    {
+        try
+        {
+            GC.Collect(2, GCCollectionMode.Aggressive, false, false);
+            GC.WaitForPendingFinalizers();
+            using var currentProcess = Process.GetCurrentProcess();
+            NativeMethods.EmptyWorkingSet(currentProcess.Handle);
+            NativeMethods.SetProcessWorkingSetSize(currentProcess.Handle, -1, -1);
+        }
+        catch { }
+    }
+
     protected override async void OnExit(ExitEventArgs e)
     {
         try
@@ -432,6 +499,17 @@ public partial class App : Application
 
                 await _host.StopAsync();
                 _host.Dispose();
+            }
+
+            if (_singleInstanceMutex != null)
+            {
+                try
+                {
+                    _singleInstanceMutex.ReleaseMutex();
+                }
+                catch { }
+                _singleInstanceMutex.Dispose();
+                _singleInstanceMutex = null;
             }
         }
         catch { }

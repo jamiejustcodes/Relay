@@ -1,11 +1,13 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
+[assembly: InternalsVisibleTo("Relay")]
+[assembly: InternalsVisibleTo("Relay.UI")]
 [assembly: InternalsVisibleTo("Relay.Tests")]
 
 namespace Relay.Infrastructure.ScreenCapture;
 
-internal static class NativeMethods
+public static class NativeMethods
 {
     public const int SRCCOPY = 0x00CC0020;
     public const int CAPTUREBLT = 0x40000000;
@@ -152,4 +154,32 @@ internal static class NativeMethods
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     public static extern IntPtr GetModuleHandle(string? lpModuleName);
+
+    // Memory Management & Resource Trimming
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool SetProcessWorkingSetSize(IntPtr hProcess, IntPtr dwMinimumWorkingSetSize, IntPtr dwMaximumWorkingSetSize);
+
+    [DllImport("psapi.dll")]
+    public static extern int EmptyWorkingSet(IntPtr hProcess);
+
+    // Single-Instance Window Activation
+    public const int SW_RESTORE = 9;
+    public const int SW_SHOW = 5;
+    public const int WM_USER = 0x0400;
+    public const int WM_SHOW_RELAY = WM_USER + 777;
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    public static extern bool IsIconic(IntPtr hWnd);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern IntPtr FindWindow(string? lpClassName, string? lpWindowName);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 }
