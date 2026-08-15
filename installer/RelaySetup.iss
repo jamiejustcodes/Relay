@@ -39,7 +39,7 @@ Name: "startwithwindows"; Description: "Start Relay automatically in background 
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "..\bin\publish\win-x64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\bin\publish\win-x64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*.pdb,obfuscated,Mapping.txt"
 Source: "{#MyAppIcon}"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
