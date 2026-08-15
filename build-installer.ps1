@@ -1,10 +1,10 @@
 # =====================================================================
-# Relay Installer Builder Script
+# Relay Installer & Security Obfuscation Packaging Pipeline
 # =====================================================================
 $ErrorActionPreference = "Stop"
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "   Relay Installer Packaging Pipeline   " -ForegroundColor Cyan
+Write-Host "   Relay Hardened Packaging Pipeline    " -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 
 $RepoRoot = $PSScriptRoot
@@ -31,39 +31,115 @@ if (-not $IsccExe) {
     }
 }
 
-Write-Host "[1/3] Found Inno Setup Compiler: $IsccExe" -ForegroundColor Green
+Write-Host "[1/4] Found Inno Setup Compiler: $IsccExe" -ForegroundColor Green
 
-# 2. Build and Publish Self-Contained Relay
+# 2. Locate / Install Obfuscar Global Tool
+$ObfuscarCmd = Get-Command obfuscar.console -ErrorAction SilentlyContinue
+if (-not $ObfuscarCmd) {
+    $UserToolPath = "$env:USERPROFILE\.dotnet\tools\obfuscar.console.exe"
+    if (Test-Path $UserToolPath) {
+        $ObfuscarExe = $UserToolPath
+    } else {
+        Write-Host "Installing Obfuscar Global Tool..." -ForegroundColor Yellow
+        dotnet tool install --global Obfuscar.GlobalTool
+        $ObfuscarExe = "$env:USERPROFILE\.dotnet\tools\obfuscar.console.exe"
+    }
+} else {
+    $ObfuscarExe = $ObfuscarCmd.Source
+}
+
+Write-Host "[2/4] Found Obfuscar Tool: $ObfuscarExe" -ForegroundColor Green
+
+# 3. Build and Publish Self-Contained Release
 $PublishDir = Join-Path $RepoRoot "bin\publish\win-x64"
 if (Test-Path $PublishDir) {
     Remove-Item -Path $PublishDir -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-Write-Host "[2/3] Publishing Relay (Release, self-contained, win-x64, ReadyToRun)..." -ForegroundColor Yellow
+Write-Host "[3/4] Publishing Relay (Release, self-contained, win-x64, ReadyToRun)..." -ForegroundColor Yellow
 
 & dotnet publish "$RepoRoot\src\Relay.UI\Relay.UI.csproj" `
     -c Release `
     -r win-x64 `
     --self-contained true `
-    -p:PublishSingleFile=true `
-    -p:PublishReadyToRun=true `
-    -p:IncludeNativeLibrariesForSelfExtract=true `
+    -p:PublishSingleFile=false `
+    -p:PublishReadyToRun=false `
+    -p:DebugType=none `
+    -p:DebugSymbols=false `
     -o $PublishDir
 
 if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish failed with exit code $LASTEXITCODE"
 }
 
-Write-Host "  -> Published successfully to $PublishDir" -ForegroundColor Green
+# 4. Perform MSIL Obfuscation on Core, Infrastructure, and UI
+Write-Host "  -> Generating Obfuscar Configuration and Executing Obfuscation..." -ForegroundColor Yellow
+$ObfuscarConfigFile = Join-Path $RepoRoot "installer\obfuscar.xml"
 
-# 3. Compile Installer with Inno Setup
+$ObfuscarXmlContent = @"
+<?xml version="1.0" encoding="utf-8" ?>
+<Obfuscator>
+  <Var name="InPath" value="$PublishDir" />
+  <Var name="OutPath" value="$PublishDir\obfuscated" />
+  
+  <Var name="KeepPublicApi" value="false" />
+  <Var name="HidePrivateApi" value="true" />
+  <Var name="RenameProperties" value="true" />
+  <Var name="RenameEvents" value="true" />
+  <Var name="RenameFields" value="true" />
+  <Var name="UseUnicodeNames" value="true" />
+  <Var name="HideStrings" value="true" />
+  <Var name="OptimizeMethods" value="true" />
+  <Var name="SuppressIldasm" value="true" />
+
+  <!-- Core Layer Obfuscation -->
+  <Module file="`$(InPath)\Relay.Core.dll" />
+
+  <!-- Infrastructure Layer Obfuscation (Prompts, AI Providers, Secrets, Database) -->
+  <Module file="`$(InPath)\Relay.Infrastructure.dll" />
+
+  <!-- UI Assembly Obfuscation (Preserving WPF XAML view/model contract) -->
+  <Module file="`$(InPath)\Relay.dll">
+    <SkipType name="Relay.UI.App" />
+    <SkipType name="Relay.UI.Views.*" />
+    <SkipType name="Relay.UI.Controls.*" />
+    <SkipProperty type="Relay.UI.ViewModels.*" name="*" />
+  </Module>
+</Obfuscator>
+"@
+
+Set-Content -Path $ObfuscarConfigFile -Value $ObfuscarXmlContent -Encoding UTF8
+
+& "$ObfuscarExe" "$ObfuscarConfigFile"
+
+if ($LASTEXITCODE -ne 0) {
+    throw "Obfuscar obfuscation failed with exit code $LASTEXITCODE"
+}
+
+# Replace original DLLs with obfuscated DLLs
+$ObfuscatedDir = Join-Path $PublishDir "obfuscated"
+if (Test-Path $ObfuscatedDir) {
+    Get-ChildItem -Path $ObfuscatedDir -Filter "*.dll" | ForEach-Object {
+        Copy-Item -Path $_.FullName -Destination $PublishDir -Force
+    }
+    Remove-Item -Path $ObfuscatedDir -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+# Strip any stray PDBs or symbol mappings
+Get-ChildItem -Path $PublishDir -Filter "*.pdb" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
+$MappingFile = Join-Path $RepoRoot "Mapping.txt"
+if (Test-Path $MappingFile) { Remove-Item $MappingFile -Force }
+
+Write-Host "  -> Code obfuscation & symbol stripping completed successfully." -ForegroundColor Green
+
+# 5. Compile Installer with Inno Setup
 $DistDir = Join-Path $RepoRoot "dist"
 if (-not (Test-Path $DistDir)) {
     New-Item -ItemType Directory -Path $DistDir -Force | Out-Null
 }
 
 $IssFile = Join-Path $RepoRoot "installer\RelaySetup.iss"
-Write-Host "[3/3] Compiling Inno Setup script: $IssFile..." -ForegroundColor Yellow
+Write-Host "[4/4] Compiling Inno Setup installer: $IssFile..." -ForegroundColor Yellow
 
 & "$IsccExe" "$IssFile"
 
@@ -76,7 +152,7 @@ if (Test-Path $SetupExe) {
     $FileSizeMB = [math]::Round(((Get-Item $SetupExe).Length / 1MB), 2)
     Write-Host ""
     Write-Host "==========================================================" -ForegroundColor Green
-    Write-Host "  SUCCESS! Installer generated:" -ForegroundColor Green
+    Write-Host "  SUCCESS! Hardened Installer generated:" -ForegroundColor Green
     Write-Host "  $SetupExe ($FileSizeMB MB)" -ForegroundColor Cyan
     Write-Host "==========================================================" -ForegroundColor Green
 } else {
