@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private void OnMinimizeToTrayClick(object sender, RoutedEventArgs e)
     {
         Hide();
+        App.TrimWorkingSet();
     }
 
     protected override void OnClosing(CancelEventArgs e)
@@ -28,5 +29,6 @@ public partial class MainWindow : Window
         // Hide to tray rather than exiting whole process
         e.Cancel = true;
         Hide();
+        App.TrimWorkingSet();
     }
 }
