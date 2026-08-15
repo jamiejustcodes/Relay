@@ -4,9 +4,9 @@ cls
 echo ========================================================
 echo   Relay - AI Desktop Assistant for Windows
 echo ========================================================
-echo   Status: Launching Relay Dashboard...
-echo   Global Hotkey: Ctrl + Space
+echo   Quick Capture: Ctrl + Space
+echo   Ask with Prompt: Ctrl + Shift + Space
 echo ========================================================
 echo.
-dotnet run --project src/ScreenLens.UI/ScreenLens.UI.csproj
+dotnet run --project src/Relay.UI/Relay.UI.csproj
 pause

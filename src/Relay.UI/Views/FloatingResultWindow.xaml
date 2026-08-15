@@ -1,0 +1,362 @@
+<Window x:Class="Relay.UI.Views.FloatingResultWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:Relay.UI.ViewModels"
+        xmlns:controls="clr-namespace:Relay.UI.Controls"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance vm:FloatingResultViewModel}"
+        Title="Relay AI"
+        Icon="/Assets/relay.ico"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="{Binding IsPinned}"
+        ShowInTaskbar="False"
+        Width="580"
+        Height="620"
+        MinHeight="420"
+        MaxHeight="840"
+        WindowStartupLocation="Manual">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Window.Resources>
+
+    <!-- Glassmorphic Card Container -->
+    <Border Margin="14"
+            Background="{StaticResource GlassBackgroundBrush}"
+            BorderBrush="{StaticResource GlassBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="14"
+            ClipToBounds="False">
+        <Border.Effect>
+            <DropShadowEffect Color="#000000" BlurRadius="28" ShadowDepth="8" Opacity="0.7" />
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <!-- 0: Header -->
+                <RowDefinition Height="Auto" />
+                <!-- 1: Context & Intent Header -->
+                <RowDefinition Height="Auto" />
+                <!-- 2: Action Chips Bar -->
+                <RowDefinition Height="Auto" />
+                <!-- 3: Content Body (Markdown + Search) -->
+                <RowDefinition Height="*" />
+                <!-- 4: Follow-up Input Bar -->
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- 0: Window Header & Drag Bar -->
+            <Border Grid.Row="0"
+                    Background="{StaticResource BgPanelBrush}"
+                    CornerRadius="14,14,0,0"
+                    Padding="14,10"
+                    BorderBrush="{StaticResource GlassBorderSubtleBrush}"
+                    BorderThickness="0,0,0,1"
+                    MouseLeftButtonDown="OnHeaderMouseDown"
+                    Cursor="SizeAll">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- App Title & Icon -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="20" Height="20" Background="{StaticResource AccentPrimaryBrush}" CornerRadius="5" Margin="0,0,8,0">
+                            <TextBlock Text="✦" Foreground="#FFFFFF" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <TextBlock Text="Relay" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <!-- Application Origin Badge -->
+                    <Border Grid.Column="1"
+                            HorizontalAlignment="Left"
+                            Margin="14,0,0,0"
+                            Background="#18FFFFFF"
+                            BorderBrush="{StaticResource GlassBorderSubtleBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="8,3"
+                            MaxWidth="260">
+                        <TextBlock Text="{Binding ApplicationBadge}"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="11"
+                                   TextTrimming="CharacterEllipsis"
+                                   VerticalAlignment="Center" />
+                    </Border>
+
+                    <!-- Window Actions (Copy, Pin, Close) -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Style="{StaticResource IconWindowButtonStyle}"
+                                Command="{Binding CopyAllContentCommand}"
+                                ToolTip="Copy response markdown"
+                                Margin="0,0,4,0">
+                            <TextBlock Text="📋" FontSize="11" />
+                        </Button>
+                        <Button Command="{Binding TogglePinCommand}"
+                                ToolTip="{Binding PinTooltip}"
+                                Background="{Binding PinBackgroundBrush}"
+                                BorderBrush="{Binding PinBorderBrush}"
+                                BorderThickness="1"
+                                Cursor="Hand"
+                                Margin="0,0,4,0">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            CornerRadius="6"
+                                            Padding="7,3">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding PinIcon}" FontSize="11" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding PinText}" FontSize="11" FontWeight="SemiBold" Foreground="{Binding PinForegroundBrush}" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                        <Button Style="{StaticResource CloseWindowButtonStyle}"
+                                Command="{Binding CloseCommand}"
+                                ToolTip="Close">
+                            <TextBlock Text="✕" FontSize="12" FontWeight="Bold" />
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- 1: Context Card (Thumbnail + Intent + Summary) -->
+            <Border Grid.Row="1" Padding="14,12,14,8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Crop Thumbnail Preview -->
+                    <Border Grid.Column="0"
+                            Width="74" Height="74"
+                            Margin="0,0,12,0"
+                            Background="{StaticResource CodeBgBrush}"
+                            BorderBrush="{StaticResource GlassBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            ClipToBounds="True">
+                        <Grid>
+                            <Image Source="{Binding ThumbnailImage}" Stretch="UniformToFill" />
+                            <Border VerticalAlignment="Bottom" Background="#B3000000" Padding="4,1">
+                                <TextBlock Text="{Binding DimensionBadge}"
+                                           FontSize="9"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           HorizontalAlignment="Center" />
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- Title & Summary -->
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <!-- Intent Badge & Streaming Indicator -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Border Background="#206366F1"
+                                    BorderBrush="{StaticResource AccentPrimaryBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Padding="6,2"
+                                    Margin="0,0,8,0">
+                                <TextBlock Text="{Binding DetectedIntent}"
+                                           Foreground="{StaticResource AccentPrimaryHoverBrush}"
+                                           FontSize="10"
+                                           FontWeight="Bold" />
+                            </Border>
+
+                            <Border Visibility="{Binding IsStreaming, Converter={StaticResource BoolToVis}}"
+                                    Background="#2006B6D4"
+                                    CornerRadius="4"
+                                    Padding="6,2">
+                                <TextBlock Text="● Streaming..."
+                                           Foreground="{StaticResource AccentCyanBrush}"
+                                           FontSize="10" />
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Title -->
+                        <TextBlock Text="{Binding Title}"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontWeight="SemiBold"
+                                   FontSize="15"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,3" />
+
+                        <!-- Executive Summary -->
+                        <TextBlock Text="{Binding Summary}"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"
+                                   LineHeight="16" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- 2: Action Chips Bar -->
+            <Border Grid.Row="2" Padding="14,0,14,8"
+                    Visibility="{Binding ActionItems.Count, Converter={StaticResource BoolToVis}}">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding ActionItems}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource IntentChipButtonStyle}"
+                                        Content="{Binding Label}"
+                                        Command="{Binding DataContext.TriggerActionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}"
+                                        Margin="0,0,6,0" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+
+            <!-- 3: Content Body (Streaming Markdown Viewer) -->
+            <Border Grid.Row="3" Padding="14,4,14,10">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+                        <!-- Error Banner (if any) -->
+                        <Border Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}"
+                                Background="#1A1E293B"
+                                BorderBrush="#406366F1"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="12,10"
+                                Margin="0,0,0,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="ℹ️" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Top" />
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding ErrorMessage}"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           FontSize="12"
+                                           LineHeight="16"
+                                           TextWrapping="Wrap" />
+                            </Grid>
+                        </Border>
+
+                        <!-- Active Prompt Pill (when prompt was sent with capture) -->
+                        <Border Visibility="{Binding HasActivePrompt, Converter={StaticResource BoolToVis}}"
+                                Background="#186366F1"
+                                BorderBrush="#406366F1"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="10,8"
+                                Margin="0,0,0,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="💬" FontSize="13" Margin="0,0,8,0" VerticalAlignment="Top" />
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Prompt with Image:" FontSize="10" FontWeight="Bold" Foreground="{StaticResource AccentPrimaryHoverBrush}" Margin="0,0,0,2" />
+                                    <TextBlock Text="{Binding ActivePrompt}"
+                                               FontSize="12"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Markdown Content -->
+                        <controls:MarkdownViewerControl Markdown="{Binding MarkdownContent}" />
+
+                        <!-- Web Search Results (if available) -->
+                        <Border Visibility="{Binding HasSearchResults, Converter={StaticResource BoolToVis}}"
+                                Margin="0,12,0,0"
+                                Background="{StaticResource BgCardBrush}"
+                                BorderBrush="{StaticResource GlassBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="10">
+                            <StackPanel>
+                                <TextBlock Text="🔍 Web Search Findings"
+                                           FontWeight="SemiBold"
+                                           FontSize="12"
+                                           Foreground="{StaticResource AccentCyanBrush}"
+                                           Margin="0,0,0,8" />
+                                <ItemsControl ItemsSource="{Binding SearchResults}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Margin="0,0,0,6" Padding="6" Background="{StaticResource BgPanelBrush}" CornerRadius="6">
+                                                <StackPanel>
+                                                    <Button Style="{StaticResource SubtleActionButtonStyle}"
+                                                            HorizontalAlignment="Left"
+                                                            Padding="0"
+                                                            BorderThickness="0"
+                                                            Background="Transparent"
+                                                            Command="{Binding DataContext.OpenUrlCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding Url}">
+                                                        <TextBlock Text="{Binding Title}"
+                                                                   FontWeight="SemiBold"
+                                                                   FontSize="12"
+                                                                   Foreground="{StaticResource AccentPrimaryHoverBrush}"
+                                                                   TextDecorations="Underline" />
+                                                    </Button>
+                                                    <TextBlock Text="{Binding Snippet}"
+                                                               FontSize="11"
+                                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                                               TextWrapping="Wrap"
+                                                               Margin="0,2,0,0" />
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- 4: Follow-up Question Input Bar -->
+            <Border Grid.Row="4"
+                    Background="{StaticResource BgPanelBrush}"
+                    CornerRadius="0,0,14,14"
+                    Padding="12"
+                    BorderBrush="{StaticResource GlassBorderSubtleBrush}"
+                    BorderThickness="0,1,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox Grid.Column="0"
+                             Style="{StaticResource ModernTextBoxStyle}"
+                             Text="{Binding QuestionInput, UpdateSourceTrigger=PropertyChanged}"
+                             KeyDown="OnInputKeyDown"
+                             Margin="0,0,8,0"
+                             Height="36"
+                             VerticalContentAlignment="Center"
+                             ToolTip="Ask anything about this selection (Press Enter)" />
+
+                    <Button Grid.Column="1"
+                            Style="{StaticResource ModernActionButtonStyle}"
+                            Command="{Binding SubmitQuestionCommand}"
+                            Height="36"
+                            Width="74"
+                            Content="Ask ↵" />
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>
