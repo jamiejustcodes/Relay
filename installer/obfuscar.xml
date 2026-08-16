@@ -13,7 +13,7 @@
   <Var name="OptimizeMethods" value="true" />
   <Var name="SuppressIldasm" value="true" />
 
-  <!-- Core Layer Obfuscation (Keep Models and Interfaces un-renamed) -->
+  <!-- Core Layer Obfuscation -->
   <Module file="$(InPath)\Relay.Core.dll">
     <SkipType name="Relay.Core.Models.*" />
     <SkipType name="Relay.Core.Interfaces.*" />
