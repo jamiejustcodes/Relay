@@ -1,11 +1,16 @@
 # =====================================================================
 # Relay Installer & Security Obfuscation Packaging Pipeline
 # =====================================================================
+param(
+    [ValidateSet("FrameworkDependent", "SelfContained")]
+    [string]$DeploymentMode = "FrameworkDependent"
+)
+
 $ErrorActionPreference = "Stop"
 
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "   Relay Hardened Packaging Pipeline    " -ForegroundColor Cyan
-Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "==========================================================" -ForegroundColor Cyan
+Write-Host "   Relay Hardened Packaging Pipeline ($DeploymentMode)   " -ForegroundColor Cyan
+Write-Host "==========================================================" -ForegroundColor Cyan
 
 $RepoRoot = $PSScriptRoot
 Set-Location $RepoRoot
@@ -31,7 +36,7 @@ if (-not $IsccExe) {
     }
 }
 
-Write-Host "[1/4] Found Inno Setup Compiler: $IsccExe" -ForegroundColor Green
+Write-Host "[1/5] Found Inno Setup Compiler: $IsccExe" -ForegroundColor Green
 
 # 2. Locate / Install Obfuscar Global Tool
 $ObfuscarCmd = Get-Command obfuscar.console -ErrorAction SilentlyContinue
@@ -48,20 +53,21 @@ if (-not $ObfuscarCmd) {
     $ObfuscarExe = $ObfuscarCmd.Source
 }
 
-Write-Host "[2/4] Found Obfuscar Tool: $ObfuscarExe" -ForegroundColor Green
+Write-Host "[2/5] Found Obfuscar Tool: $ObfuscarExe" -ForegroundColor Green
 
-# 3. Build and Publish Self-Contained Release
+# 3. Build and Publish Relay
 $PublishDir = Join-Path $RepoRoot "bin\publish\win-x64"
 if (Test-Path $PublishDir) {
     Remove-Item -Path $PublishDir -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-Write-Host "[3/4] Publishing Relay (Release, self-contained, win-x64, ReadyToRun)..." -ForegroundColor Yellow
+$IsSelfContained = ($DeploymentMode -eq "SelfContained")
+Write-Host "[3/5] Publishing Relay ($DeploymentMode, Release, win-x64)..." -ForegroundColor Yellow
 
 & dotnet publish "$RepoRoot\src\Relay.UI\Relay.UI.csproj" `
     -c Release `
     -r win-x64 `
-    --self-contained true `
+    --self-contained $IsSelfContained `
     -p:PublishSingleFile=false `
     -p:PublishReadyToRun=false `
     -p:DebugType=none `
@@ -72,8 +78,35 @@ if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish failed with exit code $LASTEXITCODE"
 }
 
-# 4. Perform MSIL Obfuscation on Core, Infrastructure, and UI
-Write-Host "  -> Generating Obfuscar Configuration and Executing Obfuscation..." -ForegroundColor Yellow
+# 4. Optimization & Stripping for Self-Contained mode
+if ($IsSelfContained) {
+    Write-Host "  -> Stripping unused diagnostic DACs, symbol readers, and legacy modules..." -ForegroundColor Yellow
+    
+    # Remove debugger and diagnostic native DAC engines not needed at runtime
+    $DiagnosticFiles = @(
+        "mscordbi.dll",
+        "Microsoft.DiaSymReader.Native.amd64.dll",
+        "ReachFramework.dll",
+        "System.Windows.Controls.Ribbon.dll",
+        "PresentationUI.dll",
+        "Microsoft.VisualBasic.Core.dll"
+    )
+    foreach ($file in $DiagnosticFiles) {
+        $filePath = Join-Path $PublishDir $file
+        if (Test-Path $filePath) { Remove-Item $filePath -Force -ErrorAction SilentlyContinue }
+    }
+    Get-ChildItem -Path $PublishDir -Filter "mscordaccore*.dll" | Remove-Item -Force -ErrorAction SilentlyContinue
+
+    # Remove non-English satellite resource folders
+    $SatelliteFolders = @("cs", "de", "es", "fr", "it", "ja", "ko", "pl", "pt-BR", "ru", "tr", "zh-Hans", "zh-Hant")
+    foreach ($lang in $SatelliteFolders) {
+        $langDir = Join-Path $PublishDir $lang
+        if (Test-Path $langDir) { Remove-Item $langDir -Recurse -Force -ErrorAction SilentlyContinue }
+    }
+}
+
+# 5. Perform MSIL Obfuscation on Core and Infrastructure
+Write-Host "[4/5] Generating Obfuscar Configuration and Executing Obfuscation..." -ForegroundColor Yellow
 $ObfuscarConfigFile = Join-Path $RepoRoot "installer\obfuscar.xml"
 
 $ObfuscarXmlContent = @"
@@ -92,7 +125,7 @@ $ObfuscarXmlContent = @"
   <Var name="OptimizeMethods" value="true" />
   <Var name="SuppressIldasm" value="true" />
 
-  <!-- Core Layer Obfuscation (Keep Models and Interfaces un-renamed) -->
+  <!-- Core Layer Obfuscation -->
   <Module file="`$(InPath)\Relay.Core.dll">
     <SkipType name="Relay.Core.Models.*" />
     <SkipType name="Relay.Core.Interfaces.*" />
@@ -130,18 +163,31 @@ Get-ChildItem -Path $PublishDir -Filter "*.pdb" -Recurse | Remove-Item -Force -E
 $MappingFile = Join-Path $RepoRoot "Mapping.txt"
 if (Test-Path $MappingFile) { Remove-Item $MappingFile -Force }
 
-Write-Host "  -> Code obfuscation & symbol stripping completed successfully." -ForegroundColor Green
+# Measure installed footprint
+$InstalledBytes = (Get-ChildItem -Path $PublishDir -Recurse | Measure-Object -Property Length -Sum).Sum
+$InstalledMB = [math]::Round(($InstalledBytes / 1MB), 2)
+$FileCount = (Get-ChildItem -Path $PublishDir -Recurse -File).Count
 
-# 5. Compile Installer with Inno Setup
+Write-Host "  -> Code obfuscation & symbol stripping completed successfully." -ForegroundColor Green
+Write-Host "  -> Installed Directory Footprint: $InstalledMB MB ($FileCount files)" -ForegroundColor Cyan
+
+# 6. Compile Installer with Inno Setup
 $DistDir = Join-Path $RepoRoot "dist"
 if (-not (Test-Path $DistDir)) {
     New-Item -ItemType Directory -Path $DistDir -Force | Out-Null
 }
 
 $IssFile = Join-Path $RepoRoot "installer\RelaySetup.iss"
-Write-Host "[4/4] Compiling Inno Setup installer: $IssFile..." -ForegroundColor Yellow
+Write-Host "[5/5] Compiling Inno Setup installer: $IssFile..." -ForegroundColor Yellow
 
-& "$IsccExe" "$IssFile"
+$InnoArgs = @("$IssFile")
+if ($DeploymentMode -eq "FrameworkDependent") {
+    $InnoArgs += "/DFrameworkDependent=1"
+} else {
+    $InnoArgs += "/DSelfContained=1"
+}
+
+& "$IsccExe" $InnoArgs
 
 if ($LASTEXITCODE -ne 0) {
     throw "Inno Setup compilation failed with exit code $LASTEXITCODE"
@@ -149,11 +195,15 @@ if ($LASTEXITCODE -ne 0) {
 
 $SetupExe = Join-Path $DistDir "RelaySetup.exe"
 if (Test-Path $SetupExe) {
-    $FileSizeMB = [math]::Round(((Get-Item $SetupExe).Length / 1MB), 2)
+    $SetupSizeMB = [math]::Round(((Get-Item $SetupExe).Length / 1MB), 2)
+    $BaselineInstalledMB = 175.0
+    $ReductionPercent = [math]::Round(((1 - ($InstalledMB / $BaselineInstalledMB)) * 100), 1)
+
     Write-Host ""
     Write-Host "==========================================================" -ForegroundColor Green
-    Write-Host "  SUCCESS! Hardened Installer generated:" -ForegroundColor Green
-    Write-Host "  $SetupExe ($FileSizeMB MB)" -ForegroundColor Cyan
+    Write-Host "  SUCCESS! Hardened Installer generated ($DeploymentMode):" -ForegroundColor Green
+    Write-Host "  Installer EXE : $SetupExe ($SetupSizeMB MB)" -ForegroundColor Cyan
+    Write-Host "  Installed Size: $InstalledMB MB ($ReductionPercent% reduction vs 175 MB baseline!)" -ForegroundColor Green
     Write-Host "==========================================================" -ForegroundColor Green
 } else {
     throw "Expected installer file was not found at $SetupExe"
