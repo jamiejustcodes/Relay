@@ -135,13 +135,6 @@ public partial class App : Application
                                                    arg.Equals("-tray", StringComparison.OrdinalIgnoreCase)) ||
                                   settings.StartMinimizedToTray;
 
-            var mainWindow = _host.Services.GetRequiredService<MainWindow>();
-            var mainVm = _host.Services.GetRequiredService<MainWindowViewModel>();
-            mainVm.TriggerCaptureRequested += (s, ev) => Dispatcher.Invoke(() => TriggerScreenSelection(isPromptMode: false));
-            mainVm.TriggerPromptCaptureRequested += (s, ev) => Dispatcher.Invoke(() => TriggerScreenSelection(isPromptMode: true));
-            mainVm.OpenSettingsRequested += (s, ev) => Dispatcher.Invoke(OpenSettingsWindow);
-            mainVm.OpenHistoryRequested += (s, ev) => Dispatcher.Invoke(OpenHistoryWindow);
-
             if (startMinimized)
             {
                 if (settings.ShowTrayNotifications && _taskbarIcon != null)
@@ -156,9 +149,11 @@ public partial class App : Application
             }
             else
             {
-                mainWindow.Show();
-                mainWindow.Activate();
+                ShowMainWindow();
             }
+
+            // Start periodic background memory trimmer
+            StartMemoryTrimmerTimer();
         }
         catch (Exception ex)
         {
@@ -312,23 +307,36 @@ public partial class App : Application
         }
     }
 
+    private MainWindow? _mainWindow;
+    private MainWindowViewModel? _mainViewModel;
+
     private void ShowMainWindow()
     {
         if (_host == null) return;
 
-        var mainWindow = _host.Services.GetRequiredService<MainWindow>();
-        if (!mainWindow.IsVisible)
+        if (_mainWindow == null)
         {
-            mainWindow.Show();
+            _mainViewModel = _host.Services.GetRequiredService<MainWindowViewModel>();
+            _mainViewModel.TriggerCaptureRequested += (s, ev) => Dispatcher.Invoke(() => TriggerScreenSelection(isPromptMode: false));
+            _mainViewModel.TriggerPromptCaptureRequested += (s, ev) => Dispatcher.Invoke(() => TriggerScreenSelection(isPromptMode: true));
+            _mainViewModel.OpenSettingsRequested += (s, ev) => Dispatcher.Invoke(OpenSettingsWindow);
+            _mainViewModel.OpenHistoryRequested += (s, ev) => Dispatcher.Invoke(OpenHistoryWindow);
+
+            _mainWindow = _host.Services.GetRequiredService<MainWindow>();
         }
 
-        if (mainWindow.WindowState == WindowState.Minimized)
+        if (!_mainWindow.IsVisible)
         {
-            mainWindow.WindowState = WindowState.Normal;
+            _mainWindow.Show();
         }
 
-        mainWindow.Activate();
-        mainWindow.Focus();
+        if (_mainWindow.WindowState == WindowState.Minimized)
+        {
+            _mainWindow.WindowState = WindowState.Normal;
+        }
+
+        _mainWindow.Activate();
+        _mainWindow.Focus();
     }
 
     private void InitializeTrayIcon()
@@ -508,18 +516,40 @@ public partial class App : Application
         }
     }
 
+    private System.Windows.Threading.DispatcherTimer? _memoryTimer;
+
+    private void StartMemoryTrimmerTimer()
+    {
+        _memoryTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(30)
+        };
+        _memoryTimer.Tick += (s, e) =>
+        {
+            // Only trim when no visible application windows are actively open
+            bool hasOpenWindows = Windows.Cast<Window>().Any(w => w.IsVisible && !(w is SelectionOverlayWindow));
+            if (!hasOpenWindows)
+            {
+                TrimWorkingSet();
+            }
+        };
+        _memoryTimer.Start();
+    }
+
     /// <summary>
-    /// Minimizes process working set memory footprint down to ~10-15 MB when idle in background.
+    /// Minimizes process working set memory footprint down to ~8-12 MB when idle in background.
     /// </summary>
     public static void TrimWorkingSet()
     {
         try
         {
-            GC.Collect(2, GCCollectionMode.Aggressive, false, false);
+            GC.Collect(2, GCCollectionMode.Aggressive, blocking: true, compacting: true);
             GC.WaitForPendingFinalizers();
+            GC.Collect(2, GCCollectionMode.Aggressive, blocking: true, compacting: true);
+
             using var currentProcess = Process.GetCurrentProcess();
+            NativeMethods.SetProcessWorkingSetSize(currentProcess.Handle, (IntPtr)(-1), (IntPtr)(-1));
             NativeMethods.EmptyWorkingSet(currentProcess.Handle);
-            NativeMethods.SetProcessWorkingSetSize(currentProcess.Handle, -1, -1);
         }
         catch { }
     }
