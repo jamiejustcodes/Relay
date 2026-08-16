@@ -43,7 +43,8 @@ public class SettingsService : ISettingsService
             if (File.Exists(pathToRead))
             {
                 string json = await File.ReadAllTextAsync(pathToRead, ct);
-                var loaded = JsonSerializer.Deserialize<AppSettings>(json);
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var loaded = JsonSerializer.Deserialize<AppSettings>(json, options);
                 if (loaded != null)
                 {
                     // Auto-migrate any deprecated or non-working models to gemini-flash-latest
@@ -95,13 +96,17 @@ public class SettingsService : ISettingsService
                 Directory.CreateDirectory(dir);
             }
 
-            var options = new JsonSerializerOptions { WriteIndented = true };
+            var options = new JsonSerializerOptions 
+            { 
+                WriteIndented = true,
+                PropertyNameCaseInsensitive = true
+            };
             string json = JsonSerializer.Serialize(settings, options);
             await File.WriteAllTextAsync(SettingsFilePath, json, ct);
         }
-        catch
+        catch (Exception ex)
         {
-            // Non-fatal logging
+            System.Diagnostics.Debug.WriteLine($"[SettingsService] Save failed: {ex.Message}");
         }
     }
 

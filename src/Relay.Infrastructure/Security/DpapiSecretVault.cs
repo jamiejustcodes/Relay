@@ -24,13 +24,6 @@ public class DpapiSecretVault : ISecretVault
         {
             if (Debugger.IsAttached) return true;
             if (NativeMethods.IsDebuggerPresent()) return true;
-
-            bool isRemoteDebugger = false;
-            using var proc = Process.GetCurrentProcess();
-            if (NativeMethods.CheckRemoteDebuggerPresent(proc.Handle, ref isRemoteDebugger) && isRemoteDebugger)
-            {
-                return true;
-            }
         }
         catch { }
 

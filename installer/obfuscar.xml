@@ -13,11 +13,15 @@
   <Var name="OptimizeMethods" value="true" />
   <Var name="SuppressIldasm" value="true" />
 
-  <!-- Core Layer Obfuscation -->
-  <Module file="$(InPath)\Relay.Core.dll" />
+  <!-- Core Layer Obfuscation (Keep Models un-renamed for JSON & EF serialization) -->
+  <Module file="$(InPath)\Relay.Core.dll">
+    <SkipType name="Relay.Core.Models.*" />
+  </Module>
 
   <!-- Infrastructure Layer Obfuscation (Prompts, AI Providers, Secrets, Database) -->
-  <Module file="$(InPath)\Relay.Infrastructure.dll" />
+  <Module file="$(InPath)\Relay.Infrastructure.dll">
+    <SkipType name="Relay.Infrastructure.Data.*" />
+  </Module>
 
   <!-- UI Assembly Obfuscation (Preserving WPF XAML view/model contract) -->
   <Module file="$(InPath)\Relay.dll">
