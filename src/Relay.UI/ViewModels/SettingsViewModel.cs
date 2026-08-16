@@ -558,13 +558,13 @@ public partial class SettingsViewModel : ObservableObject
 
         _startupService.SetStartup(StartWithWindows, startMinimized: true);
 
+        // Always persist all settings first
+        await _settingsService.SaveSettingsAsync(settings);
+
+        // Then encrypt and store the API key (re-saves settings with the encrypted key)
         if (!string.IsNullOrWhiteSpace(ApiKey))
         {
             await _settingsService.SetApiKeyAsync(ApiKey.Trim());
-        }
-        else
-        {
-            await _settingsService.SaveSettingsAsync(settings);
         }
 
         // Re-register hotkeys immediately
