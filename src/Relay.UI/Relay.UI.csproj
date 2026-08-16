@@ -29,6 +29,9 @@
 
   <ItemGroup>
     <Resource Include="Assets\relay.ico" />
+    <Content Include="Assets\relay.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
