@@ -337,31 +337,73 @@ public partial class App : Application
         {
             System.Drawing.Icon? trayIcon = null;
 
-            // Load from pack URI stream
+            // 1. Extract high-res icon directly from running executable process
             try
             {
-                var iconUri = new Uri("pack://application:,,,/Relay.UI;component/Assets/relay.ico", UriKind.RelativeOrAbsolute);
-                var streamResource = GetResourceStream(iconUri);
-                if (streamResource != null)
+                string? processPath = Environment.ProcessPath;
+                if (string.IsNullOrEmpty(processPath))
                 {
-                    using var stream = streamResource.Stream;
-                    trayIcon = new System.Drawing.Icon(stream);
+                    using var proc = Process.GetCurrentProcess();
+                    processPath = proc.MainModule?.FileName;
+                }
+
+                if (!string.IsNullOrEmpty(processPath) && System.IO.File.Exists(processPath))
+                {
+                    trayIcon = System.Drawing.Icon.ExtractAssociatedIcon(processPath);
                 }
             }
             catch { }
 
-            // Fallback to local file if needed
+            // 2. Load from WPF Pack URI
             if (trayIcon == null)
             {
-                try
+                string[] packUris = new[]
                 {
-                    string icoPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "relay.ico");
-                    if (System.IO.File.Exists(icoPath))
+                    "pack://application:,,,/Relay;component/Assets/relay.ico",
+                    "pack://application:,,,/Assets/relay.ico",
+                    "pack://application:,,,/Relay.UI;component/Assets/relay.ico"
+                };
+
+                foreach (var uriStr in packUris)
+                {
+                    try
                     {
-                        trayIcon = new System.Drawing.Icon(icoPath);
+                        var iconUri = new Uri(uriStr, UriKind.RelativeOrAbsolute);
+                        var streamResource = GetResourceStream(iconUri);
+                        if (streamResource != null)
+                        {
+                            using var stream = streamResource.Stream;
+                            trayIcon = new System.Drawing.Icon(stream);
+                            if (trayIcon != null) break;
+                        }
+                    }
+                    catch { }
+                }
+            }
+
+            // 3. Fallback to local files
+            if (trayIcon == null)
+            {
+                string[] candidatePaths = new[]
+                {
+                    System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "relay.ico"),
+                    System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "relay.ico"),
+                    System.IO.Path.Combine(AppContext.BaseDirectory, "relay.ico"),
+                    System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "relay.ico")
+                };
+
+                foreach (var path in candidatePaths)
+                {
+                    if (System.IO.File.Exists(path))
+                    {
+                        try
+                        {
+                            trayIcon = new System.Drawing.Icon(path);
+                            if (trayIcon != null) break;
+                        }
+                        catch { }
                     }
                 }
-                catch { }
             }
 
             trayIcon ??= SystemIcons.Application;
