@@ -3,9 +3,9 @@
   <Var name="InPath" value="E:\ScreenLens\bin\publish\win-x64" />
   <Var name="OutPath" value="E:\ScreenLens\bin\publish\win-x64\obfuscated" />
   
-  <Var name="KeepPublicApi" value="false" />
+  <Var name="KeepPublicApi" value="true" />
   <Var name="HidePrivateApi" value="true" />
-  <Var name="RenameProperties" value="true" />
+  <Var name="RenameProperties" value="false" />
   <Var name="RenameEvents" value="true" />
   <Var name="RenameFields" value="true" />
   <Var name="UseUnicodeNames" value="true" />
@@ -13,21 +13,17 @@
   <Var name="OptimizeMethods" value="true" />
   <Var name="SuppressIldasm" value="true" />
 
-  <!-- Core Layer Obfuscation (Keep Models un-renamed for JSON & EF serialization) -->
+  <!-- Core Layer Obfuscation (Keep Models and Interfaces un-renamed) -->
   <Module file="$(InPath)\Relay.Core.dll">
     <SkipType name="Relay.Core.Models.*" />
+    <SkipType name="Relay.Core.Interfaces.*" />
   </Module>
 
-  <!-- Infrastructure Layer Obfuscation (Prompts, AI Providers, Secrets, Database) -->
+  <!-- Infrastructure Layer Obfuscation -->
   <Module file="$(InPath)\Relay.Infrastructure.dll">
     <SkipType name="Relay.Infrastructure.Data.*" />
-  </Module>
-
-  <!-- UI Assembly Obfuscation (Preserving WPF XAML view/model contract) -->
-  <Module file="$(InPath)\Relay.dll">
-    <SkipType name="Relay.UI.App" />
-    <SkipType name="Relay.UI.Views.*" />
-    <SkipType name="Relay.UI.Controls.*" />
-    <SkipProperty type="Relay.UI.ViewModels.*" name="*" />
+    <SkipType name="Relay.Infrastructure.Security.*" />
+    <SkipType name="Relay.Infrastructure.ScreenCapture.NativeMethods" />
+    <SkipType name="Relay.Infrastructure.ScreenCapture.NativeMethods/*" />
   </Module>
 </Obfuscator>
