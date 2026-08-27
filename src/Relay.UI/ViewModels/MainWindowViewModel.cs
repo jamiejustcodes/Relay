@@ -23,6 +23,9 @@ public partial class MainWindowViewModel : ObservableObject
     private bool _hasApiKey;
 
     [ObservableProperty]
+    private bool _isReady;
+
+    [ObservableProperty]
     private string _statusText = "Ready & Listening";
 
     public event EventHandler? TriggerCaptureRequested;
@@ -52,6 +55,7 @@ public partial class MainWindowViewModel : ObservableObject
         StatusText = isOllama
             ? "Local AI • Ready & Listening"
             : (HasApiKey ? "Ready & Listening" : "API Key Required in Settings");
+        IsReady = isOllama || HasApiKey;
     }
 
     [RelayCommand]

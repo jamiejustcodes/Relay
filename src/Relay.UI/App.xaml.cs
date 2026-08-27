@@ -13,6 +13,7 @@ using Relay.Infrastructure.Hotkeys;
 using Relay.Infrastructure.ScreenCapture;
 using Relay.UI.ViewModels;
 using Relay.UI.Views;
+using Wpf.Ui.Appearance;
 
 namespace Relay.UI;
 
@@ -117,6 +118,13 @@ public partial class App : Application
                 .Build();
 
             await _host.StartAsync();
+
+            // Apply WPF-UI dark theme with Mica backdrop and custom indigo accent
+            ApplicationThemeManager.Apply(ApplicationTheme.Dark, Wpf.Ui.Controls.WindowBackdropType.Mica, updateAccent: true);
+            ApplicationAccentColorManager.Apply(
+                System.Windows.Media.Color.FromRgb(0x63, 0x66, 0xF1),  // Indigo-500
+                ApplicationTheme.Dark
+            );
 
             // 3. Load settings and register global hotkey
             var settingsService = _host.Services.GetRequiredService<ISettingsService>();

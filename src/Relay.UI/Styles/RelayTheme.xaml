@@ -1,0 +1,108 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- Relay Design Tokens                                        -->
+    <!-- Layered on top of WPF-UI's ThemesDictionary / ControlsDictionary -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+
+    <!-- Accent (Indigo-500) — used ONLY for primary CTA + status dot -->
+    <Color x:Key="RelayAccentColor">#6366F1</Color>
+    <Color x:Key="RelayAccentHoverColor">#818CF8</Color>
+    <SolidColorBrush x:Key="RelayAccentBrush" Color="{StaticResource RelayAccentColor}" />
+    <SolidColorBrush x:Key="RelayAccentHoverBrush" Color="{StaticResource RelayAccentHoverColor}" />
+    <SolidColorBrush x:Key="RelayAccentSubtleBrush" Color="#186366F1" />
+
+    <!-- Status Colors -->
+    <Color x:Key="RelayReadyColor">#10B981</Color>
+    <Color x:Key="RelayWarningColor">#F59E0B</Color>
+    <SolidColorBrush x:Key="RelayReadyBrush" Color="{StaticResource RelayReadyColor}" />
+    <SolidColorBrush x:Key="RelayWarningBrush" Color="{StaticResource RelayWarningColor}" />
+
+    <!-- Text (supplementary to WPF-UI's built-in text brushes) -->
+    <SolidColorBrush x:Key="RelayTextDimBrush" Color="#64748B" />
+    <SolidColorBrush x:Key="RelayTextMutedBrush" Color="#475569" />
+    <SolidColorBrush x:Key="RelaySeparatorBrush" Color="#30FFFFFF" />
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- Typography                                                 -->
+    <!-- Builds on WPF-UI's Segoe UI Variable / Segoe Fluent Icons  -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+
+    <!-- Display: "Relay" wordmark -->
+    <Style x:Key="RelayDisplayTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Segoe UI Variable Display, Segoe UI" />
+        <Setter Property="FontSize" Value="20" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+    </Style>
+
+    <!-- Hero heading: "Capture Screen" -->
+    <Style x:Key="RelayHeroTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Segoe UI Variable Display, Segoe UI" />
+        <Setter Property="FontSize" Value="28" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+    </Style>
+
+    <!-- Subtitle / section heading -->
+    <Style x:Key="RelaySubtitleTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <!-- Body text -->
+    <Style x:Key="RelayBodyTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+    </Style>
+
+    <!-- Caption / metadata -->
+    <Style x:Key="RelayCaptionTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Segoe UI Variable Small, Segoe UI" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="Foreground" Value="{StaticResource RelayTextDimBrush}" />
+    </Style>
+
+    <!-- Keyboard shortcut badge -->
+    <Style x:Key="RelayKbdBadgeStyle" TargetType="Border">
+        <Setter Property="Background" Value="#15FFFFFF" />
+        <Setter Property="BorderBrush" Value="#25FFFFFF" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Padding" Value="6,2" />
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- Spacing                                                    -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+
+    <Thickness x:Key="RelayPagePadding">24,0,24,16</Thickness>
+    <Thickness x:Key="RelayCardPadding">14,10</Thickness>
+    <Thickness x:Key="RelayHeroMargin">0,24,0,0</Thickness>
+    <Thickness x:Key="RelayStatusStripMargin">0,16,0,0</Thickness>
+    <Thickness x:Key="RelayFooterMargin">0,12,0,0</Thickness>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- Pulsing Status Dot Animation Storyboard                    -->
+    <!-- Used by MainWindow for the ready-state indicator           -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+
+    <Storyboard x:Key="RelayPulseAnimation" RepeatBehavior="Forever">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="1.0" To="0.4"
+                         Duration="0:0:1.2"
+                         AutoReverse="True">
+            <DoubleAnimation.EasingFunction>
+                <SineEase EasingMode="EaseInOut" />
+            </DoubleAnimation.EasingFunction>
+        </DoubleAnimation>
+    </Storyboard>
+
+</ResourceDictionary>

@@ -33,7 +33,10 @@ public partial class SettingsViewModel : ObservableObject
     private string _apiKey = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowApiKeyTooltip))]
     private bool _showApiKey;
+
+    public string ShowApiKeyTooltip => ShowApiKey ? "Hide API key" : "Show API key";
 
     [ObservableProperty]
     private string _selectedModel = "gemini-flash-latest";
@@ -206,6 +209,7 @@ public partial class SettingsViewModel : ObservableObject
 
         // Gemini state
         ApiKey = key ?? string.Empty;
+        ShowApiKey = false;
         SelectedModel = settings.SelectedModel;
 
         // Hotkeys

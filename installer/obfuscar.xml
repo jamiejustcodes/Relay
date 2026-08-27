@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Obfuscator>
-  <Var name="InPath" value="E:\ScreenLens\bin\publish\win-x64" />
-  <Var name="OutPath" value="E:\ScreenLens\bin\publish\win-x64\obfuscated" />
+  <Var name="InPath" value="E:\AnimedBo\Relay-main\Relay-main\bin\publish\win-x64" />
+  <Var name="OutPath" value="E:\AnimedBo\Relay-main\Relay-main\bin\publish\win-x64\obfuscated" />
   
   <Var name="KeepPublicApi" value="true" />
   <Var name="HidePrivateApi" value="true" />

@@ -1,10 +1,11 @@
 using System.ComponentModel;
 using System.Windows;
 using Relay.UI.ViewModels;
+using Wpf.Ui.Controls;
 
 namespace Relay.UI.Views;
 
-public partial class MainWindow : Window
+public partial class MainWindow : FluentWindow
 {
     private readonly MainWindowViewModel _viewModel;
 

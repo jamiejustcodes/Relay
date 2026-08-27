@@ -155,15 +155,72 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0"
-                                     Style="{StaticResource ModernTextBoxStyle}"
-                                     Text="{Binding ApiKey, UpdateSourceTrigger=PropertyChanged}"
-                                     Height="36" Margin="0,0,8,0" />
+
+                            <!-- API Key Input Field (Masked / Plain with Eye Toggle) -->
+                            <Grid Grid.Column="0" Margin="0,0,8,0">
+                                <!-- Masked PasswordBox (default / hidden state) -->
+                                <PasswordBox x:Name="ApiKeyPasswordBox"
+                                             Style="{StaticResource ModernPasswordBoxStyle}"
+                                             controls:PasswordBoxHelper.BoundPassword="{Binding ApiKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="36"
+                                             Padding="12,8,38,8"
+                                             Visibility="{Binding ShowApiKey, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+
+                                <!-- Plain Text TextBox (visible when ShowApiKey is true) -->
+                                <TextBox x:Name="ApiKeyTextBox"
+                                         Style="{StaticResource ModernTextBoxStyle}"
+                                         Text="{Binding ApiKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="36"
+                                         Padding="12,8,38,8"
+                                         Visibility="{Binding ShowApiKey, Converter={StaticResource BoolToVis}}" />
+
+                                <!-- Show/Hide Eye Toggle Button -->
+                                <Button HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Width="30" Height="30"
+                                        Margin="0,0,3,0"
+                                        Command="{Binding ToggleShowApiKeyCommand}"
+                                        Style="{StaticResource IconWindowButtonStyle}"
+                                        ToolTip="{Binding ShowApiKeyTooltip}">
+                                    <Grid>
+                                        <!-- Eye Icon (shown when API key is hidden -> click to reveal) -->
+                                        <Viewbox Width="16" Height="16"
+                                                 Visibility="{Binding ShowApiKey, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M 1 12 C 3.5 6.5 7.5 3.5 12 3.5 C 16.5 3.5 20.5 6.5 23 12 C 20.5 17.5 16.5 20.5 12 20.5 C 7.5 20.5 3.5 17.5 1 12 Z"
+                                                      Stroke="{StaticResource TextSecondaryBrush}"
+                                                      StrokeThickness="2"
+                                                      StrokeLineJoin="Round"
+                                                      StrokeStartLineCap="Round"
+                                                      StrokeEndLineCap="Round" />
+                                                <Path Data="M 12 9 A 3 3 0 1 0 12 15 A 3 3 0 1 0 12 9 Z"
+                                                      Stroke="{StaticResource TextSecondaryBrush}"
+                                                      StrokeThickness="2"
+                                                      Fill="Transparent" />
+                                            </Canvas>
+                                        </Viewbox>
+
+                                        <!-- Eye-Off Icon (shown when API key is visible -> click to hide) -->
+                                        <Viewbox Width="16" Height="16"
+                                                 Visibility="{Binding ShowApiKey, Converter={StaticResource BoolToVis}}">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M 17.94 17.94 A 10.07 10.07 0 0 1 12 20.5 C 7.5 20.5 3.5 17.5 1 12 A 18.45 18.45 0 0 1 5.06 6.94 M 9.9 4.24 A 9.12 9.12 0 0 1 12 3.5 C 16.5 3.5 20.5 6.5 23 12 A 18.5 18.5 0 0 1 19.42 16.42 M 1 1 L 23 23 M 9.88 9.88 A 3 3 0 1 0 14.12 14.12"
+                                                      Stroke="{StaticResource TextSecondaryBrush}"
+                                                      StrokeThickness="2"
+                                                      StrokeLineJoin="Round"
+                                                      StrokeStartLineCap="Round"
+                                                      StrokeEndLineCap="Round" />
+                                            </Canvas>
+                                        </Viewbox>
+                                    </Grid>
+                                </Button>
+                            </Grid>
+
                             <Button Grid.Column="1"
-                                     Style="{StaticResource SubtleActionButtonStyle}"
-                                     Command="{Binding TestConnectionCommand}"
-                                     Height="36"
-                                     Content="Test Key" />
+                                    Style="{StaticResource SubtleActionButtonStyle}"
+                                    Command="{Binding TestConnectionCommand}"
+                                    Height="36"
+                                    Content="Test Key" />
                         </Grid>
 
                         <!-- Status Message -->
