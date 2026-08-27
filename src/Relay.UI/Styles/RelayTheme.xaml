@@ -88,6 +88,46 @@
     <Thickness x:Key="RelayHeroMargin">0,24,0,0</Thickness>
     <Thickness x:Key="RelayStatusStripMargin">0,16,0,0</Thickness>
     <Thickness x:Key="RelayFooterMargin">0,12,0,0</Thickness>
+    <Thickness x:Key="RelayCardSectionMargin">0,0,0,14</Thickness>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- Shared Component Styles                                    -->
+    <!-- Used by Settings, History, and FloatingResult windows      -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+
+    <!-- Section heading inside cards (e.g. "AI Provider", "Global Keyboard Shortcuts") -->
+    <Style x:Key="RelaySectionHeaderTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Segoe UI Variable Display, Segoe UI" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+    </Style>
+
+    <!-- Field label above inputs (e.g. "Modifiers", "Key") -->
+    <Style x:Key="RelayFieldLabelTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Segoe UI Variable Small, Segoe UI" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+    </Style>
+
+    <!-- Detail panel title (e.g. History detail title, Floating window title) -->
+    <Style x:Key="RelayDetailTitleTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Segoe UI Variable Display, Segoe UI" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <!-- Standardized Card section border (matches main window status strip) -->
+    <Style x:Key="RelayCardStyle" TargetType="Border">
+        <Setter Property="Background" Value="#08FFFFFF" />
+        <Setter Property="BorderBrush" Value="#15FFFFFF" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="16,12" />
+    </Style>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- Pulsing Status Dot Animation Storyboard                    -->

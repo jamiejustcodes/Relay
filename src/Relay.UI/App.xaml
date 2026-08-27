@@ -18,6 +18,9 @@
             <controls:NullToVisibilityConverter x:Key="NullToVis" />
             <controls:CountToVisibilityConverter x:Key="CountToVis" />
             <controls:StatusMessageToBrushConverter x:Key="StatusMessageToBrushConverter" />
+            <controls:IntentToBrushConverter x:Key="IntentToBrushConverter" />
+            <controls:IntentToForegroundConverter x:Key="IntentToForegroundConverter" />
+            <controls:Base64ToImageConverter x:Key="Base64ToImageConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>
