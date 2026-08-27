@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:Relay.UI.ViewModels"
         xmlns:controls="clr-namespace:Relay.UI.Controls"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance vm:FloatingResultViewModel}"
         Title="Relay AI"
@@ -20,19 +21,15 @@
         MaxHeight="840"
         WindowStartupLocation="Manual">
 
-    <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
-    </Window.Resources>
-
-    <!-- Glassmorphic Card Container -->
+    <!-- Glassmorphic Card Container (Consistent with Relay theme) -->
     <Border Margin="14"
-            Background="{StaticResource GlassBackgroundBrush}"
-            BorderBrush="{StaticResource GlassBorderBrush}"
+            Background="#F2131722"
+            BorderBrush="#25FFFFFF"
             BorderThickness="1"
-            CornerRadius="14"
+            CornerRadius="12"
             ClipToBounds="False">
         <Border.Effect>
-            <DropShadowEffect Color="#000000" BlurRadius="28" ShadowDepth="8" Opacity="0.7" />
+            <DropShadowEffect Color="#000000" BlurRadius="28" ShadowDepth="6" Opacity="0.65" />
         </Border.Effect>
 
         <Grid>
@@ -49,12 +46,14 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- 0: Window Header & Drag Bar -->
+            <!-- ═══════════════════════════════════════════════════ -->
+            <!-- 0: Window Header & Drag Bar (Matches Relay TitleBar) -->
+            <!-- ═══════════════════════════════════════════════════ -->
             <Border Grid.Row="0"
-                    Background="{StaticResource BgPanelBrush}"
-                    CornerRadius="14,14,0,0"
+                    Background="#0AFFFFFF"
+                    CornerRadius="12,12,0,0"
                     Padding="14,10"
-                    BorderBrush="{StaticResource GlassBorderSubtleBrush}"
+                    BorderBrush="#15FFFFFF"
                     BorderThickness="0,0,0,1"
                     MouseLeftButtonDown="OnHeaderMouseDown"
                     Cursor="SizeAll">
@@ -65,26 +64,34 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- App Title & Icon -->
+                    <!-- App Title & Icon (Matches Main Window) -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="20" Height="20" Background="{StaticResource AccentPrimaryBrush}" CornerRadius="5" Margin="0,0,8,0">
-                            <TextBlock Text="✦" Foreground="#FFFFFF" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <Border Width="22" Height="22"
+                                Background="{StaticResource RelayAccentBrush}"
+                                CornerRadius="5"
+                                Margin="0,0,8,0">
+                            <TextBlock Text="✦"
+                                       Foreground="#FFFFFF"
+                                       FontWeight="Bold"
+                                       FontSize="12"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
                         </Border>
-                        <TextBlock Text="Relay" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" />
+                        <TextBlock Text="Relay"
+                                   FontWeight="SemiBold"
+                                   FontSize="13"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                   VerticalAlignment="Center" />
                     </StackPanel>
 
-                    <!-- Application Origin Badge -->
+                    <!-- Application Origin Badge (Matches RelayKbdBadgeStyle) -->
                     <Border Grid.Column="1"
                             HorizontalAlignment="Left"
-                            Margin="14,0,0,0"
-                            Background="#18FFFFFF"
-                            BorderBrush="{StaticResource GlassBorderSubtleBrush}"
-                            BorderThickness="1"
-                            CornerRadius="6"
-                            Padding="8,3"
+                            Margin="12,0,0,0"
+                            Style="{StaticResource RelayKbdBadgeStyle}"
                             MaxWidth="260">
                         <TextBlock Text="{Binding ApplicationBadge}"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   Foreground="{StaticResource RelayTextDimBrush}"
                                    FontSize="11"
                                    TextTrimming="CharacterEllipsis"
                                    VerticalAlignment="Center" />
@@ -123,13 +130,15 @@
                         <Button Style="{StaticResource CloseWindowButtonStyle}"
                                 Command="{Binding CloseCommand}"
                                 ToolTip="Close">
-                            <TextBlock Text="✕" FontSize="12" FontWeight="Bold" />
+                            <TextBlock Text="✕" FontSize="11" FontWeight="Bold" />
                         </Button>
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <!-- 1: Context Card (Thumbnail + Intent + Summary) -->
+            <!-- ═══════════════════════════════════════════════════ -->
+            <!-- 1: Context Card (Thumbnail + Intent + Summary)     -->
+            <!-- ═══════════════════════════════════════════════════ -->
             <Border Grid.Row="1" Padding="14,12,14,8">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -139,10 +148,10 @@
 
                     <!-- Crop Thumbnail Preview -->
                     <Border Grid.Column="0"
-                            Width="74" Height="74"
+                            Width="72" Height="72"
                             Margin="0,0,12,0"
-                            Background="{StaticResource CodeBgBrush}"
-                            BorderBrush="{StaticResource GlassBorderBrush}"
+                            Background="#08FFFFFF"
+                            BorderBrush="#15FFFFFF"
                             BorderThickness="1"
                             CornerRadius="8"
                             ClipToBounds="True">
@@ -151,7 +160,7 @@
                             <Border VerticalAlignment="Bottom" Background="#B3000000" Padding="4,1">
                                 <TextBlock Text="{Binding DimensionBadge}"
                                            FontSize="9"
-                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           Foreground="{StaticResource RelayTextDimBrush}"
                                            HorizontalAlignment="Center" />
                             </Border>
                         </Grid>
@@ -161,14 +170,13 @@
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
                         <!-- Intent Badge & Streaming Indicator -->
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                            <Border Background="#206366F1"
-                                    BorderBrush="{StaticResource AccentPrimaryBrush}"
-                                    BorderThickness="1"
+                            <!-- Category Intent Pill (Matches History Window) -->
+                            <Border Background="{Binding DetectedIntent, Converter={StaticResource IntentToBrushConverter}}"
                                     CornerRadius="4"
                                     Padding="6,2"
                                     Margin="0,0,8,0">
                                 <TextBlock Text="{Binding DetectedIntent}"
-                                           Foreground="{StaticResource AccentPrimaryHoverBrush}"
+                                           Foreground="{Binding DetectedIntent, Converter={StaticResource IntentToForegroundConverter}}"
                                            FontSize="10"
                                            FontWeight="Bold" />
                             </Border>
@@ -185,23 +193,24 @@
 
                         <!-- Title -->
                         <TextBlock Text="{Binding Title}"
-                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                    FontWeight="SemiBold"
-                                   FontSize="15"
+                                   FontSize="14"
                                    TextWrapping="Wrap"
                                    Margin="0,0,0,3" />
 
                         <!-- Executive Summary -->
                         <TextBlock Text="{Binding Summary}"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   Style="{StaticResource RelaySubtitleTextStyle}"
                                    FontSize="12"
-                                   TextWrapping="Wrap"
                                    LineHeight="16" />
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <!-- 2: Action Chips Bar -->
+            <!-- ═══════════════════════════════════════════════════ -->
+            <!-- 2: Action Chips Bar                                -->
+            <!-- ═══════════════════════════════════════════════════ -->
             <Border Grid.Row="2" Padding="14,0,14,8"
                     Visibility="{Binding ActionItems.Count, Converter={StaticResource BoolToVis}}">
                 <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
@@ -224,14 +233,16 @@
                 </ScrollViewer>
             </Border>
 
-            <!-- 3: Content Body (Streaming Markdown Viewer) -->
+            <!-- ═══════════════════════════════════════════════════ -->
+            <!-- 3: Content Body (Streaming Markdown Viewer)        -->
+            <!-- ═══════════════════════════════════════════════════ -->
             <Border Grid.Row="3" Padding="14,4,14,10">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
                     <StackPanel>
                         <!-- Error Banner (if any) -->
                         <Border Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}"
-                                Background="#1A1E293B"
-                                BorderBrush="#406366F1"
+                                Background="#1AF43F5E"
+                                BorderBrush="#40F43F5E"
                                 BorderThickness="1"
                                 CornerRadius="8"
                                 Padding="12,10"
@@ -241,10 +252,10 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="ℹ️" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Top" />
+                                <TextBlock Text="⚠️" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Top" />
                                 <TextBlock Grid.Column="1"
                                            Text="{Binding ErrorMessage}"
-                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                            FontSize="12"
                                            LineHeight="16"
                                            TextWrapping="Wrap" />
@@ -253,7 +264,7 @@
 
                         <!-- Active Prompt Pill (when prompt was sent with capture) -->
                         <Border Visibility="{Binding HasActivePrompt, Converter={StaticResource BoolToVis}}"
-                                Background="#186366F1"
+                                Background="{StaticResource RelayAccentSubtleBrush}"
                                 BorderBrush="#406366F1"
                                 BorderThickness="1"
                                 CornerRadius="8"
@@ -266,11 +277,11 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="💬" FontSize="13" Margin="0,0,8,0" VerticalAlignment="Top" />
                                 <StackPanel Grid.Column="1">
-                                    <TextBlock Text="Prompt with Image:" FontSize="10" FontWeight="Bold" Foreground="{StaticResource AccentPrimaryHoverBrush}" Margin="0,0,0,2" />
+                                    <TextBlock Text="Prompt with Image:" FontSize="10" FontWeight="Bold" Foreground="{StaticResource RelayAccentHoverBrush}" Margin="0,0,0,2" />
                                     <TextBlock Text="{Binding ActivePrompt}"
                                                FontSize="12"
                                                FontWeight="SemiBold"
-                                               Foreground="{StaticResource TextPrimaryBrush}"
+                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                                TextWrapping="Wrap" />
                                 </StackPanel>
                             </Grid>
@@ -282,21 +293,18 @@
                         <!-- Web Search Results (if available) -->
                         <Border Visibility="{Binding HasSearchResults, Converter={StaticResource BoolToVis}}"
                                 Margin="0,12,0,0"
-                                Background="{StaticResource BgCardBrush}"
-                                BorderBrush="{StaticResource GlassBorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="8"
+                                Style="{StaticResource RelayCardStyle}"
                                 Padding="10">
                             <StackPanel>
                                 <TextBlock Text="🔍 Web Search Findings"
+                                           Style="{StaticResource RelayFieldLabelTextStyle}"
                                            FontWeight="SemiBold"
-                                           FontSize="12"
                                            Foreground="{StaticResource AccentCyanBrush}"
                                            Margin="0,0,0,8" />
                                 <ItemsControl ItemsSource="{Binding SearchResults}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Margin="0,0,0,6" Padding="6" Background="{StaticResource BgPanelBrush}" CornerRadius="6">
+                                            <Border Margin="0,0,0,6" Padding="8" Background="#08FFFFFF" CornerRadius="6">
                                                 <StackPanel>
                                                     <Button Style="{StaticResource SubtleActionButtonStyle}"
                                                             HorizontalAlignment="Left"
@@ -308,12 +316,11 @@
                                                         <TextBlock Text="{Binding Title}"
                                                                    FontWeight="SemiBold"
                                                                    FontSize="12"
-                                                                   Foreground="{StaticResource AccentPrimaryHoverBrush}"
+                                                                   Foreground="{StaticResource RelayAccentHoverBrush}"
                                                                    TextDecorations="Underline" />
                                                     </Button>
                                                     <TextBlock Text="{Binding Snippet}"
-                                                               FontSize="11"
-                                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                                               Style="{StaticResource RelayCaptionTextStyle}"
                                                                TextWrapping="Wrap"
                                                                Margin="0,2,0,0" />
                                                 </StackPanel>
@@ -327,12 +334,14 @@
                 </ScrollViewer>
             </Border>
 
-            <!-- 4: Follow-up Question Input Bar -->
+            <!-- ═══════════════════════════════════════════════════ -->
+            <!-- 4: Follow-up Question Input Bar                    -->
+            <!-- ═══════════════════════════════════════════════════ -->
             <Border Grid.Row="4"
-                    Background="{StaticResource BgPanelBrush}"
-                    CornerRadius="0,0,14,14"
+                    Background="#0AFFFFFF"
+                    CornerRadius="0,0,12,12"
                     Padding="12"
-                    BorderBrush="{StaticResource GlassBorderSubtleBrush}"
+                    BorderBrush="#15FFFFFF"
                     BorderThickness="0,1,0,0">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -349,11 +358,12 @@
                              VerticalContentAlignment="Center"
                              ToolTip="Ask anything about this selection (Press Enter)" />
 
+                    <!-- Primary Action Button (Matches Quick Capture Primary button aesthetic) -->
                     <Button Grid.Column="1"
                             Style="{StaticResource ModernActionButtonStyle}"
                             Command="{Binding SubmitQuestionCommand}"
                             Height="36"
-                            Width="74"
+                            Padding="16,0"
                             Content="Ask ↵" />
                 </Grid>
             </Border>
