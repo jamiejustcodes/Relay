@@ -1,9 +1,10 @@
 using System.Windows;
 using Relay.UI.ViewModels;
+using Wpf.Ui.Controls;
 
 namespace Relay.UI.Views;
 
-public partial class SettingsWindow : Window
+public partial class SettingsWindow : FluentWindow
 {
     private readonly SettingsViewModel _viewModel;
 

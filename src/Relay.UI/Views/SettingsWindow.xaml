@@ -1,572 +1,780 @@
-<Window x:Class="Relay.UI.Views.SettingsWindow"
+<ui:FluentWindow x:Class="Relay.UI.Views.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:vm="clr-namespace:Relay.UI.ViewModels"
         xmlns:controls="clr-namespace:Relay.UI.Controls"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance vm:SettingsViewModel}"
-        Title="Relay Settings"
+        Title="Relay — Settings"
         Icon="/Assets/relay.ico"
         WindowStartupLocation="CenterScreen"
-        Width="580" Height="760"
-        Background="{StaticResource BgCanvasBrush}"
-        Foreground="{StaticResource TextPrimaryBrush}">
+        Width="600" Height="780"
+        MinWidth="520" MinHeight="600"
+        ExtendsContentIntoTitleBar="True"
+        WindowBackdropType="Mica"
+        WindowCornerPreference="Round">
 
-    <Window.Resources>
-        <controls:BooleanToVisibilityConverter x:Key="BoolToVis" />
-        <controls:StatusMessageToBrushConverter x:Key="StatusMessageToBrushConverter" />
-    </Window.Resources>
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- Main Layout                                                -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
 
-    <Grid Margin="24">
+    <Grid>
         <Grid.RowDefinitions>
-            <!-- 0: Header -->
+            <!-- 0: Custom TitleBar -->
             <RowDefinition Height="Auto" />
-            <!-- 1: Body -->
+            <!-- 1: Content Area -->
             <RowDefinition Height="*" />
-            <!-- 2: Footer / Actions -->
-            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- 0: Header -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,18">
-            <StackPanel Orientation="Horizontal">
-                <Border Width="28" Height="28" Background="{StaticResource AccentPrimaryBrush}" CornerRadius="6" Margin="0,0,10,0">
-                    <TextBlock Text="⚙" Foreground="#FFFFFF" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                </Border>
-                <TextBlock Text="Relay Settings" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" />
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- 0: Custom Title Bar                                    -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+
+        <ui:TitleBar Grid.Row="0"
+                     Title=""
+                     ShowMaximize="False">
+            <ui:TitleBar.Header>
+                <StackPanel Orientation="Horizontal" Margin="8,0,0,0">
+                    <!-- Purple Diamond Logo -->
+                    <Border Width="24" Height="24"
+                            Background="{StaticResource RelayAccentBrush}"
+                            CornerRadius="6">
+                        <TextBlock Text="✦"
+                                   Foreground="#FFFFFF"
+                                   FontWeight="Bold"
+                                   FontSize="13"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+                    </Border>
+
+                    <!-- Wordmark -->
+                    <TextBlock Text="Relay"
+                               Style="{StaticResource RelayDisplayTextStyle}"
+                               Margin="10,0,0,0"
+                               VerticalAlignment="Center" />
+
+                    <!-- Window Subtitle -->
+                    <TextBlock Text="• Settings"
+                               Style="{StaticResource RelayCaptionTextStyle}"
+                               Margin="8,0,0,0"
+                               VerticalAlignment="Center"
+                               Opacity="0.7" />
+                </StackPanel>
+            </ui:TitleBar.Header>
+        </ui:TitleBar>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- 1: Content Area                                        -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+
+        <Grid Grid.Row="1" Margin="{StaticResource RelayPagePadding}">
+            <Grid.RowDefinitions>
+                <!-- 0: Header Info -->
+                <RowDefinition Height="Auto" />
+                <!-- 1: Body Form ScrollViewer -->
+                <RowDefinition Height="*" />
+                <!-- 2: Footer / Actions -->
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- 0: Page Header -->
+            <StackPanel Grid.Row="0" Margin="0,2,0,14">
+                <TextBlock Text="Settings"
+                           Style="{StaticResource RelayHeroTextStyle}" />
+                <TextBlock Text="Configure AI models, global hotkeys, privacy, and system preferences."
+                           Style="{StaticResource RelaySubtitleTextStyle}"
+                           Margin="0,4,0,0" />
             </StackPanel>
-            <TextBlock Text="Configure AI models, global hotkeys, privacy, and system preferences." FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="38,4,0,0" />
-        </StackPanel>
 
-        <!-- 1: Body Form -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,16">
-            <StackPanel>
+            <!-- 1: Body Form -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,12" Padding="0,0,6,0">
+                <StackPanel>
 
-                <!-- ═══════════════════════════════════════════════════════ -->
-                <!-- Card 0: AI Provider Toggle                            -->
-                <!-- ═══════════════════════════════════════════════════════ -->
-                <Border Background="{StaticResource BgPanelBrush}" BorderBrush="{StaticResource GlassBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,14">
-                    <StackPanel>
-                        <TextBlock Text="🧠 AI Provider" FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4" />
-                        <TextBlock Text="Choose between Google Gemini (cloud) or a local AI running on your PC." FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <!-- Card 0: AI Provider Selector                       -->
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <Border Style="{StaticResource RelayCardStyle}" Margin="{StaticResource RelayCardSectionMargin}">
+                        <StackPanel>
+                            <TextBlock Text="AI Provider"
+                                       Style="{StaticResource RelaySectionHeaderTextStyle}"
+                                       Margin="0,0,0,3" />
+                            <TextBlock Text="Choose between Google Gemini (cloud) or a local AI running on your PC."
+                                       Style="{StaticResource RelaySubtitleTextStyle}"
+                                       FontSize="12"
+                                       Margin="0,0,0,12" />
 
-                        <!-- Two-Button Toggle -->
-                        <Grid Margin="0,0,0,4">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
+                            <!-- Two-Button Provider Toggle -->
+                            <Grid Margin="0,0,0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
 
-                            <!-- Gemini Button -->
-                            <Button Grid.Column="0" Command="{Binding SelectGeminiCommand}" Cursor="Hand" Height="48">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="GeminiBorder"
-                                                CornerRadius="8"
-                                                Padding="12,8">
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                <TextBlock Text="☁️" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center" />
-                                                <StackPanel VerticalAlignment="Center">
-                                                    <TextBlock x:Name="GeminiTitle" Text="Gemini Cloud" FontWeight="Bold" FontSize="13" VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" />
-                                                    <TextBlock x:Name="GeminiSubtitle" Text="Google AI • API Key" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,1,0,0" />
+                                <!-- Gemini Button -->
+                                <Button Grid.Column="0" Command="{Binding SelectGeminiCommand}" Cursor="Hand" Height="52">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="GeminiBorder"
+                                                    CornerRadius="8"
+                                                    Padding="12,10"
+                                                    BorderThickness="1"
+                                                    BorderBrush="#18FFFFFF"
+                                                    Background="#08FFFFFF">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <TextBlock Text="☁️" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center" />
+                                                    <StackPanel VerticalAlignment="Center">
+                                                        <TextBlock x:Name="GeminiTitle" Text="Gemini Cloud" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                                        <TextBlock x:Name="GeminiSubtitle" Text="Google AI • API Key" FontSize="11" Foreground="{StaticResource RelayTextDimBrush}" Margin="0,1,0,0" />
+                                                    </StackPanel>
                                                 </StackPanel>
-                                            </StackPanel>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <DataTrigger Binding="{Binding IsGeminiSelected}" Value="True">
-                                                <Setter TargetName="GeminiBorder" Property="Background" Value="#306366F1" />
-                                                <Setter TargetName="GeminiBorder" Property="BorderBrush" Value="{StaticResource AccentPrimaryBrush}" />
-                                                <Setter TargetName="GeminiBorder" Property="BorderThickness" Value="2" />
-                                                <Setter TargetName="GeminiTitle" Property="Foreground" Value="#FFFFFF" />
-                                                <Setter TargetName="GeminiSubtitle" Property="Foreground" Value="{StaticResource AccentPrimaryHoverBrush}" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding IsGeminiSelected}" Value="False">
-                                                <Setter TargetName="GeminiBorder" Property="Background" Value="#10FFFFFF" />
-                                                <Setter TargetName="GeminiBorder" Property="BorderBrush" Value="{StaticResource GlassBorderSubtleBrush}" />
-                                                <Setter TargetName="GeminiBorder" Property="BorderThickness" Value="1" />
-                                                <Setter TargetName="GeminiTitle" Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
-                                                <Setter TargetName="GeminiSubtitle" Property="Foreground" Value="{StaticResource TextTertiaryBrush}" />
-                                            </DataTrigger>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="GeminiBorder" Property="Background" Value="#256366F1" />
-                                                <Setter TargetName="GeminiTitle" Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsGeminiSelected}" Value="True">
+                                                    <Setter TargetName="GeminiBorder" Property="Background" Value="{StaticResource RelayAccentSubtleBrush}" />
+                                                    <Setter TargetName="GeminiBorder" Property="BorderBrush" Value="{StaticResource RelayAccentBrush}" />
+                                                    <Setter TargetName="GeminiBorder" Property="BorderThickness" Value="1.5" />
+                                                    <Setter TargetName="GeminiTitle" Property="Foreground" Value="#FFFFFF" />
+                                                    <Setter TargetName="GeminiSubtitle" Property="Foreground" Value="{StaticResource RelayAccentHoverBrush}" />
+                                                </DataTrigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="GeminiBorder" Property="Background" Value="#156366F1" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
 
-                            <!-- Ollama Button -->
-                            <Button Grid.Column="2" Command="{Binding SelectOllamaCommand}" Cursor="Hand" Height="48">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="OllamaBorder"
-                                                CornerRadius="8"
-                                                Padding="12,8">
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                <TextBlock Text="🖥️" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center" />
-                                                <StackPanel VerticalAlignment="Center">
-                                                    <TextBlock x:Name="OllamaTitle" Text="Local AI (Ollama)" FontWeight="Bold" FontSize="13" VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" />
-                                                    <TextBlock x:Name="OllamaSubtitle" Text="Private • No API Key" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,1,0,0" />
+                                <!-- Ollama Button -->
+                                <Button Grid.Column="2" Command="{Binding SelectOllamaCommand}" Cursor="Hand" Height="52">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="OllamaBorder"
+                                                    CornerRadius="8"
+                                                    Padding="12,10"
+                                                    BorderThickness="1"
+                                                    BorderBrush="#18FFFFFF"
+                                                    Background="#08FFFFFF">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <TextBlock Text="🖥️" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center" />
+                                                    <StackPanel VerticalAlignment="Center">
+                                                        <TextBlock x:Name="OllamaTitle" Text="Local AI (Ollama)" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                                        <TextBlock x:Name="OllamaSubtitle" Text="Private • No API Key" FontSize="11" Foreground="{StaticResource RelayTextDimBrush}" Margin="0,1,0,0" />
+                                                    </StackPanel>
                                                 </StackPanel>
-                                            </StackPanel>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <DataTrigger Binding="{Binding IsOllamaSelected}" Value="True">
-                                                <Setter TargetName="OllamaBorder" Property="Background" Value="#3010B981" />
-                                                <Setter TargetName="OllamaBorder" Property="BorderBrush" Value="{StaticResource AccentEmeraldBrush}" />
-                                                <Setter TargetName="OllamaBorder" Property="BorderThickness" Value="2" />
-                                                <Setter TargetName="OllamaTitle" Property="Foreground" Value="#FFFFFF" />
-                                                <Setter TargetName="OllamaSubtitle" Property="Foreground" Value="{StaticResource AccentEmeraldBrush}" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding IsOllamaSelected}" Value="False">
-                                                <Setter TargetName="OllamaBorder" Property="Background" Value="#10FFFFFF" />
-                                                <Setter TargetName="OllamaBorder" Property="BorderBrush" Value="{StaticResource GlassBorderSubtleBrush}" />
-                                                <Setter TargetName="OllamaBorder" Property="BorderThickness" Value="1" />
-                                                <Setter TargetName="OllamaTitle" Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
-                                                <Setter TargetName="OllamaSubtitle" Property="Foreground" Value="{StaticResource TextTertiaryBrush}" />
-                                            </DataTrigger>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="OllamaBorder" Property="Background" Value="#2510B981" />
-                                                <Setter TargetName="OllamaTitle" Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-                        </Grid>
-                    </StackPanel>
-                </Border>
-
-                <!-- ═══════════════════════════════════════════════════════ -->
-                <!-- Card 1: Gemini AI Credentials (visible when Gemini)    -->
-                <!-- ═══════════════════════════════════════════════════════ -->
-                <Border Background="{StaticResource BgPanelBrush}" BorderBrush="{StaticResource GlassBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,14"
-                        Visibility="{Binding IsGeminiSelected, Converter={StaticResource BoolToVis}}">
-                    <StackPanel>
-                        <TextBlock Text="✦ Gemini AI API Key" FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4" />
-                        <TextBlock Text="Your API key is encrypted locally using Windows DPAPI." FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,10" />
-
-                        <Grid Margin="0,0,0,10">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <!-- API Key Input Field (Masked / Plain with Eye Toggle) -->
-                            <Grid Grid.Column="0" Margin="0,0,8,0">
-                                <!-- Masked PasswordBox (default / hidden state) -->
-                                <PasswordBox x:Name="ApiKeyPasswordBox"
-                                             Style="{StaticResource ModernPasswordBoxStyle}"
-                                             controls:PasswordBoxHelper.BoundPassword="{Binding ApiKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             Height="36"
-                                             Padding="12,8,38,8"
-                                             Visibility="{Binding ShowApiKey, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
-
-                                <!-- Plain Text TextBox (visible when ShowApiKey is true) -->
-                                <TextBox x:Name="ApiKeyTextBox"
-                                         Style="{StaticResource ModernTextBoxStyle}"
-                                         Text="{Binding ApiKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         Height="36"
-                                         Padding="12,8,38,8"
-                                         Visibility="{Binding ShowApiKey, Converter={StaticResource BoolToVis}}" />
-
-                                <!-- Show/Hide Eye Toggle Button -->
-                                <Button HorizontalAlignment="Right"
-                                        VerticalAlignment="Center"
-                                        Width="30" Height="30"
-                                        Margin="0,0,3,0"
-                                        Command="{Binding ToggleShowApiKeyCommand}"
-                                        Style="{StaticResource IconWindowButtonStyle}"
-                                        ToolTip="{Binding ShowApiKeyTooltip}">
-                                    <Grid>
-                                        <!-- Eye Icon (shown when API key is hidden -> click to reveal) -->
-                                        <Viewbox Width="16" Height="16"
-                                                 Visibility="{Binding ShowApiKey, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
-                                            <Canvas Width="24" Height="24">
-                                                <Path Data="M 1 12 C 3.5 6.5 7.5 3.5 12 3.5 C 16.5 3.5 20.5 6.5 23 12 C 20.5 17.5 16.5 20.5 12 20.5 C 7.5 20.5 3.5 17.5 1 12 Z"
-                                                      Stroke="{StaticResource TextSecondaryBrush}"
-                                                      StrokeThickness="2"
-                                                      StrokeLineJoin="Round"
-                                                      StrokeStartLineCap="Round"
-                                                      StrokeEndLineCap="Round" />
-                                                <Path Data="M 12 9 A 3 3 0 1 0 12 15 A 3 3 0 1 0 12 9 Z"
-                                                      Stroke="{StaticResource TextSecondaryBrush}"
-                                                      StrokeThickness="2"
-                                                      Fill="Transparent" />
-                                            </Canvas>
-                                        </Viewbox>
-
-                                        <!-- Eye-Off Icon (shown when API key is visible -> click to hide) -->
-                                        <Viewbox Width="16" Height="16"
-                                                 Visibility="{Binding ShowApiKey, Converter={StaticResource BoolToVis}}">
-                                            <Canvas Width="24" Height="24">
-                                                <Path Data="M 17.94 17.94 A 10.07 10.07 0 0 1 12 20.5 C 7.5 20.5 3.5 17.5 1 12 A 18.45 18.45 0 0 1 5.06 6.94 M 9.9 4.24 A 9.12 9.12 0 0 1 12 3.5 C 16.5 3.5 20.5 6.5 23 12 A 18.5 18.5 0 0 1 19.42 16.42 M 1 1 L 23 23 M 9.88 9.88 A 3 3 0 1 0 14.12 14.12"
-                                                      Stroke="{StaticResource TextSecondaryBrush}"
-                                                      StrokeThickness="2"
-                                                      StrokeLineJoin="Round"
-                                                      StrokeStartLineCap="Round"
-                                                      StrokeEndLineCap="Round" />
-                                            </Canvas>
-                                        </Viewbox>
-                                    </Grid>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsOllamaSelected}" Value="True">
+                                                    <Setter TargetName="OllamaBorder" Property="Background" Value="{StaticResource RelayAccentSubtleBrush}" />
+                                                    <Setter TargetName="OllamaBorder" Property="BorderBrush" Value="{StaticResource RelayAccentBrush}" />
+                                                    <Setter TargetName="OllamaBorder" Property="BorderThickness" Value="1.5" />
+                                                    <Setter TargetName="OllamaTitle" Property="Foreground" Value="#FFFFFF" />
+                                                    <Setter TargetName="OllamaSubtitle" Property="Foreground" Value="{StaticResource RelayAccentHoverBrush}" />
+                                                </DataTrigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="OllamaBorder" Property="Background" Value="#156366F1" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
                                 </Button>
                             </Grid>
-
-                            <Button Grid.Column="1"
-                                    Style="{StaticResource SubtleActionButtonStyle}"
-                                    Command="{Binding TestConnectionCommand}"
-                                    Height="36"
-                                    Content="Test Key" />
-                        </Grid>
-
-                        <!-- Status Message -->
-                        <TextBlock Text="{Binding StatusMessage}"
-                                   FontSize="12"
-                                   FontWeight="Medium"
-                                   Foreground="{Binding StatusMessage, Converter={StaticResource StatusMessageToBrushConverter}}"
-                                   TextWrapping="Wrap"
-                                   Margin="0,0,0,8" />
-
-                        <!-- Model Selection -->
-                        <TextBlock Text="Model Selection" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,6,0,4" />
-                        <ComboBox ItemsSource="{Binding AvailableModels}"
-                                  SelectedItem="{Binding SelectedModel}"
-                                  Height="34" />
-                    </StackPanel>
-                </Border>
-
-                <!-- ═══════════════════════════════════════════════════════ -->
-                <!-- Card 1B: Local AI / Ollama (visible when Ollama)       -->
-                <!-- ═══════════════════════════════════════════════════════ -->
-                <Border Background="{StaticResource BgPanelBrush}" BorderBrush="{StaticResource GlassBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,14"
-                        Visibility="{Binding IsOllamaSelected, Converter={StaticResource BoolToVis}}">
-                    <StackPanel>
-                        <TextBlock Text="🖥️ Local AI Setup (Ollama)" FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4" />
-                        <TextBlock Text="Run AI vision models entirely on your PC. No data leaves your machine." FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,12" />
-
-                        <!-- Ollama Server Status Badge -->
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                            <TextBlock Text="Ollama Server:" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,8,0" VerticalAlignment="Center" />
-                            <Border CornerRadius="10" Padding="10,4" Margin="0,0,8,0">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Setter Property="Background" Value="#20F59E0B" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsOllamaRunning}" Value="True">
-                                                <Setter Property="Background" Value="#2010B981" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
-                                <TextBlock Text="{Binding OllamaStatusText}" FontSize="12" FontWeight="Bold">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Foreground" Value="#F59E0B" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsOllamaRunning}" Value="True">
-                                                    <Setter Property="Foreground" Value="{StaticResource AccentEmeraldBrush}" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                            </Border>
-                            <Button Style="{StaticResource SubtleActionButtonStyle}"
-                                    Command="{Binding RefreshOllamaStatusCommand}"
-                                    Content="↻ Refresh"
-                                    Height="28"
-                                    FontSize="11"
-                                    Padding="8,2"
-                                    Margin="0,0,6,0" />
-                            <Button Style="{StaticResource SubtleActionButtonStyle}"
-                                    Command="{Binding UninstallOllamaCommand}"
-                                    Content="🗑 Uninstall Ollama"
-                                    Foreground="#F43F5E"
-                                    Height="28"
-                                    FontSize="11"
-                                    Padding="8,2"
-                                    Visibility="{Binding IsOllamaInstalled, Converter={StaticResource BoolToVis}}" />
                         </StackPanel>
+                    </Border>
 
-                        <!-- Install Button (shown when not installed) -->
-                        <StackPanel Margin="0,0,0,10">
-                            <StackPanel.Style>
-                                <Style TargetType="StackPanel">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsOllamaInstalled}" Value="False">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </StackPanel.Style>
-                            <Border Background="#15F59E0B" BorderBrush="#40F59E0B" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,8">
-                                <StackPanel>
-                                    <TextBlock Text="Ollama is not installed on this PC." FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4" />
-                                    <TextBlock Text="Click below to download and install Ollama automatically. It installs to your user profile — no admin rights needed." FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,8" />
-                                    <Button Style="{StaticResource ModernActionButtonStyle}"
-                                            Command="{Binding InstallOllamaCommand}"
-                                            Content="⬇ Install Ollama"
-                                            Height="36"
-                                            HorizontalAlignment="Left"
-                                            Padding="16,0" />
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <!-- Card 1: Gemini AI Credentials (visible when Gemini)-->
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <Border Style="{StaticResource RelayCardStyle}" Margin="{StaticResource RelayCardSectionMargin}"
+                            Visibility="{Binding IsGeminiSelected, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <TextBlock Text="Gemini AI Credentials"
+                                       Style="{StaticResource RelaySectionHeaderTextStyle}"
+                                       Margin="0,0,0,3" />
+                            <TextBlock Text="Your API key is encrypted locally using Windows DPAPI."
+                                       Style="{StaticResource RelaySubtitleTextStyle}"
+                                       FontSize="12"
+                                       Margin="0,0,0,12" />
+
+                            <!-- API Key Input Field + Test Key Button -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- API Key Input Field (Masked / Plain with Eye Toggle) -->
+                                <Grid Grid.Column="0">
+                                    <!-- Masked PasswordBox -->
+                                    <PasswordBox x:Name="ApiKeyPasswordBox"
+                                                 Style="{StaticResource ModernPasswordBoxStyle}"
+                                                 controls:PasswordBoxHelper.BoundPassword="{Binding ApiKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Height="36"
+                                                 Padding="12,8,38,8"
+                                                 Visibility="{Binding ShowApiKey, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+
+                                    <!-- Plain Text TextBox -->
+                                    <TextBox x:Name="ApiKeyTextBox"
+                                             Style="{StaticResource ModernTextBoxStyle}"
+                                             Text="{Binding ApiKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="36"
+                                             Padding="12,8,38,8"
+                                             Visibility="{Binding ShowApiKey, Converter={StaticResource BoolToVis}}" />
+
+                                    <!-- Show/Hide Eye Toggle Button -->
+                                    <Button HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            Width="30" Height="30"
+                                            Margin="0,0,4,0"
+                                            Command="{Binding ToggleShowApiKeyCommand}"
+                                            Style="{StaticResource IconWindowButtonStyle}"
+                                            ToolTip="{Binding ShowApiKeyTooltip}">
+                                        <Grid>
+                                            <Viewbox Width="16" Height="16"
+                                                     Visibility="{Binding ShowApiKey, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M 1 12 C 3.5 6.5 7.5 3.5 12 3.5 C 16.5 3.5 20.5 6.5 23 12 C 20.5 17.5 16.5 20.5 12 20.5 C 7.5 20.5 3.5 17.5 1 12 Z"
+                                                          Stroke="{StaticResource TextSecondaryBrush}"
+                                                          StrokeThickness="2"
+                                                          StrokeLineJoin="Round"
+                                                          StrokeStartLineCap="Round"
+                                                          StrokeEndLineCap="Round" />
+                                                    <Path Data="M 12 9 A 3 3 0 1 0 12 15 A 3 3 0 1 0 12 9 Z"
+                                                          Stroke="{StaticResource TextSecondaryBrush}"
+                                                          StrokeThickness="2"
+                                                          Fill="Transparent" />
+                                                </Canvas>
+                                            </Viewbox>
+
+                                            <Viewbox Width="16" Height="16"
+                                                     Visibility="{Binding ShowApiKey, Converter={StaticResource BoolToVis}}">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M 17.94 17.94 A 10.07 10.07 0 0 1 12 20.5 C 7.5 20.5 3.5 17.5 1 12 A 18.45 18.45 0 0 1 5.06 6.94 M 9.9 4.24 A 9.12 9.12 0 0 1 12 3.5 C 16.5 3.5 20.5 6.5 23 12 A 18.5 18.5 0 0 1 19.42 16.42 M 1 1 L 23 23 M 9.88 9.88 A 3 3 0 1 0 14.12 14.12"
+                                                          Stroke="{StaticResource TextSecondaryBrush}"
+                                                          StrokeThickness="2"
+                                                          StrokeLineJoin="Round"
+                                                          StrokeStartLineCap="Round"
+                                                          StrokeEndLineCap="Round" />
+                                                </Canvas>
+                                            </Viewbox>
+                                        </Grid>
+                                    </Button>
+                                </Grid>
+
+                                <!-- WPF-UI Secondary Button: Test Key -->
+                                <ui:Button Grid.Column="2"
+                                           Appearance="Secondary"
+                                           Command="{Binding TestConnectionCommand}"
+                                           Height="36"
+                                           Padding="14,0"
+                                           Cursor="Hand">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:SymbolIcon Symbol="Key24" FontSize="15" Margin="0,0,6,0" />
+                                        <TextBlock Text="Test Key" FontSize="12" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </ui:Button>
+                            </Grid>
+
+                            <!-- Status Message -->
+                            <TextBlock Text="{Binding StatusMessage}"
+                                       FontSize="12"
+                                       FontWeight="Medium"
+                                       Foreground="{Binding StatusMessage, Converter={StaticResource StatusMessageToBrushConverter}}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,10" />
+
+                            <!-- Model Selection Grid Row -->
+                            <Border Height="1" Background="#10FFFFFF" Margin="0,0,0,10" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="180" />
+                                    <ColumnDefinition Width="14" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock Text="Model Selection" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                    <TextBlock Text="Active Gemini vision model" Style="{StaticResource RelayCaptionTextStyle}" Margin="0,1,0,0" />
                                 </StackPanel>
-                            </Border>
-                            <!-- Install Progress -->
-                            <StackPanel Visibility="{Binding IsInstallingOllama, Converter={StaticResource BoolToVis}}">
-                                <ProgressBar Value="{Binding OllamaInstallProgress}" Maximum="100" Height="6" Margin="0,0,0,4"
-                                             Foreground="{StaticResource AccentPrimaryBrush}" />
-                                <TextBlock Text="{Binding StatusMessage}" FontSize="11" Foreground="{Binding StatusMessage, Converter={StaticResource StatusMessageToBrushConverter}}" Margin="0,4,0,0" />
-                            </StackPanel>
+                                <ComboBox Grid.Column="2"
+                                          ItemsSource="{Binding AvailableModels}"
+                                          SelectedItem="{Binding SelectedModel}"
+                                          Height="34"
+                                          VerticalAlignment="Center" />
+                            </Grid>
                         </StackPanel>
+                    </Border>
 
-                        <!-- Start Button (shown when installed but not running) -->
-                        <StackPanel Margin="0,0,0,10">
-                            <StackPanel.Style>
-                                <Style TargetType="StackPanel">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <MultiDataTrigger>
-                                            <MultiDataTrigger.Conditions>
-                                                <Condition Binding="{Binding IsOllamaInstalled}" Value="True" />
-                                                <Condition Binding="{Binding IsOllamaRunning}" Value="False" />
-                                            </MultiDataTrigger.Conditions>
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </MultiDataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </StackPanel.Style>
-                            <Button Style="{StaticResource ModernActionButtonStyle}"
-                                    Command="{Binding StartOllamaCommand}"
-                                    Content="▶ Start Ollama"
-                                    Height="36"
-                                    HorizontalAlignment="Left"
-                                    Padding="16,0" />
-                        </StackPanel>
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <!-- Card 1B: Local AI / Ollama (visible when Ollama)   -->
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <Border Style="{StaticResource RelayCardStyle}" Margin="{StaticResource RelayCardSectionMargin}"
+                            Visibility="{Binding IsOllamaSelected, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <TextBlock Text="Local AI Setup (Ollama)"
+                                       Style="{StaticResource RelaySectionHeaderTextStyle}"
+                                       Margin="0,0,0,3" />
+                            <TextBlock Text="Run AI vision models entirely on your PC. No data leaves your machine."
+                                       Style="{StaticResource RelaySubtitleTextStyle}"
+                                       FontSize="12"
+                                       Margin="0,0,0,12" />
 
-                        <!-- Model Selection & Download (shown when running) -->
-                        <StackPanel Visibility="{Binding IsOllamaRunning, Converter={StaticResource BoolToVis}}">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <TextBlock Text="Vision Model:" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,10,0" VerticalAlignment="Center" />
-                                <Border CornerRadius="6" Padding="8,2">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Setter Property="Background" Value="#20F59E0B" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsSelectedOllamaModelInstalled}" Value="True">
-                                                    <Setter Property="Background" Value="#2010B981" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <TextBlock Text="{Binding SelectedModelStatusText}" FontSize="11" FontWeight="SemiBold">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="#F59E0B" />
+                            <!-- Ollama Server Status Badge Row -->
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="180" />
+                                    <ColumnDefinition Width="14" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock Text="Ollama Service" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                    <TextBlock Text="Local daemon status" Style="{StaticResource RelayCaptionTextStyle}" Margin="0,1,0,0" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Border CornerRadius="6" Padding="8,3" Margin="0,0,8,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#20F59E0B" />
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsSelectedOllamaModelInstalled}" Value="True">
-                                                        <Setter Property="Foreground" Value="{StaticResource AccentEmeraldBrush}" />
+                                                    <DataTrigger Binding="{Binding IsOllamaRunning}" Value="True">
+                                                        <Setter Property="Background" Value="#2010B981" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding OllamaStatusText}" FontSize="11" FontWeight="SemiBold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#F59E0B" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsOllamaRunning}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource RelayReadyBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+
+                                    <ui:Button Appearance="Secondary"
+                                               Command="{Binding RefreshOllamaStatusCommand}"
+                                               Height="28"
+                                               Padding="8,2"
+                                               Margin="0,0,6,0"
+                                               Cursor="Hand">
+                                        <StackPanel Orientation="Horizontal">
+                                            <ui:SymbolIcon Symbol="ArrowSync24" FontSize="13" Margin="0,0,4,0" />
+                                            <TextBlock Text="Refresh" FontSize="11" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </ui:Button>
+
+                                    <ui:Button Appearance="Secondary"
+                                               Command="{Binding UninstallOllamaCommand}"
+                                               Foreground="#F43F5E"
+                                               Height="28"
+                                               Padding="8,2"
+                                               Cursor="Hand"
+                                               Visibility="{Binding IsOllamaInstalled, Converter={StaticResource BoolToVis}}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <ui:SymbolIcon Symbol="Delete24" FontSize="13" Margin="0,0,4,0" />
+                                            <TextBlock Text="Uninstall" FontSize="11" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </ui:Button>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Install Button (shown when not installed) -->
+                            <StackPanel Margin="0,0,0,10">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsOllamaInstalled}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                <Border Background="#15F59E0B" BorderBrush="#40F59E0B" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,8">
+                                    <StackPanel>
+                                        <TextBlock Text="Ollama is not installed on this PC." FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,4" />
+                                        <TextBlock Text="Click below to download and install Ollama automatically. It installs to your user profile — no admin rights needed." FontSize="11" Foreground="{StaticResource RelayTextDimBrush}" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                        <ui:Button Appearance="Primary"
+                                                   Command="{Binding InstallOllamaCommand}"
+                                                   Height="34"
+                                                   HorizontalAlignment="Left"
+                                                   Padding="14,0"
+                                                   Cursor="Hand">
+                                            <StackPanel Orientation="Horizontal">
+                                                <ui:SymbolIcon Symbol="ArrowDownload24" FontSize="15" Margin="0,0,6,0" />
+                                                <TextBlock Text="Install Ollama" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </ui:Button>
+                                    </StackPanel>
                                 </Border>
+                                <!-- Install Progress -->
+                                <StackPanel Visibility="{Binding IsInstallingOllama, Converter={StaticResource BoolToVis}}">
+                                    <ProgressBar Value="{Binding OllamaInstallProgress}" Maximum="100" Height="6" Margin="0,0,0,4"
+                                                 Foreground="{StaticResource RelayAccentBrush}" />
+                                    <TextBlock Text="{Binding StatusMessage}" FontSize="11" Foreground="{Binding StatusMessage, Converter={StaticResource StatusMessageToBrushConverter}}" Margin="0,4,0,0" />
+                                </StackPanel>
                             </StackPanel>
+
+                            <!-- Start Button (shown when installed but not running) -->
+                            <StackPanel Margin="0,0,0,10">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsOllamaInstalled}" Value="True" />
+                                                    <Condition Binding="{Binding IsOllamaRunning}" Value="False" />
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                <ui:Button Appearance="Primary"
+                                           Command="{Binding StartOllamaCommand}"
+                                           Height="34"
+                                           HorizontalAlignment="Left"
+                                           Padding="14,0"
+                                           Cursor="Hand">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:SymbolIcon Symbol="Play24" FontSize="15" Margin="0,0,6,0" />
+                                        <TextBlock Text="Start Ollama" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </ui:Button>
+                            </StackPanel>
+
+                            <!-- Model Selection & Download (shown when running) -->
+                            <StackPanel Visibility="{Binding IsOllamaRunning, Converter={StaticResource BoolToVis}}">
+                                <Border Height="1" Background="#10FFFFFF" Margin="0,0,0,10" />
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180" />
+                                        <ColumnDefinition Width="14" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="6" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="6" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Vision Model" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                            <Border CornerRadius="4" Padding="5,1" VerticalAlignment="Center">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#20F59E0B" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsSelectedOllamaModelInstalled}" Value="True">
+                                                                <Setter Property="Background" Value="#2010B981" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock Text="{Binding SelectedModelStatusText}" FontSize="9" FontWeight="SemiBold">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="#F59E0B" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsSelectedOllamaModelInstalled}" Value="True">
+                                                                    <Setter Property="Foreground" Value="{StaticResource RelayReadyBrush}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="Local vision model" Style="{StaticResource RelayCaptionTextStyle}" Margin="0,1,0,0" />
+                                    </StackPanel>
+
+                                    <ComboBox Grid.Column="2"
+                                              ItemsSource="{Binding OllamaModels}"
+                                              SelectedItem="{Binding SelectedOllamaModel}"
+                                              IsEditable="True"
+                                              Height="34"
+                                              VerticalAlignment="Center" />
+                                    <ui:Button Grid.Column="4"
+                                               Appearance="Primary"
+                                               Command="{Binding PullModelCommand}"
+                                               Height="34"
+                                               Padding="12,0"
+                                               Cursor="Hand"
+                                               VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <ui:SymbolIcon Symbol="ArrowDownload24" FontSize="14" Margin="0,0,4,0" />
+                                            <TextBlock Text="Download" FontSize="12" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </ui:Button>
+                                    <ui:Button Grid.Column="6"
+                                               Appearance="Secondary"
+                                               Command="{Binding DeleteModelCommand}"
+                                               Foreground="#F43F5E"
+                                               Height="34"
+                                               Padding="10,0"
+                                               Cursor="Hand"
+                                               VerticalAlignment="Center"
+                                               Visibility="{Binding IsSelectedOllamaModelInstalled, Converter={StaticResource BoolToVis}}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <ui:SymbolIcon Symbol="Delete24" FontSize="14" Margin="0,0,4,0" />
+                                            <TextBlock Text="Delete" FontSize="12" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </ui:Button>
+                                </Grid>
+
+                                <!-- Notice shown if model is not installed on disk -->
+                                <Border Background="#15F59E0B" BorderBrush="#35F59E0B" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,10"
+                                        Visibility="{Binding IsSelectedOllamaModelInstalled, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+                                    <TextBlock Text="⚠️ This model is not downloaded yet. Click 'Download' to download it (~4.5 GB) before using offline capture."
+                                               FontSize="11" Foreground="{StaticResource RelayTextDimBrush}" TextWrapping="Wrap" />
+                                </Border>
+
+                                <!-- Pull Progress -->
+                                <StackPanel Visibility="{Binding IsPullingModel, Converter={StaticResource BoolToVis}}" Margin="0,0,0,8">
+                                    <ProgressBar Value="{Binding OllamaPullProgress}" Maximum="100" Height="6" Margin="0,0,0,4"
+                                                 Foreground="{StaticResource RelayReadyBrush}" />
+                                    <TextBlock Text="{Binding OllamaPullStatus}" FontSize="11" Foreground="{StaticResource RelayTextDimBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Status Message for Ollama -->
+                            <TextBlock Text="{Binding StatusMessage}"
+                                       FontSize="12"
+                                       FontWeight="Medium"
+                                       Foreground="{Binding StatusMessage, Converter={StaticResource StatusMessageToBrushConverter}}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <!-- Card 2: Global Shortcuts                            -->
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <Border Style="{StaticResource RelayCardStyle}" Margin="{StaticResource RelayCardSectionMargin}">
+                        <StackPanel>
+                            <TextBlock Text="Global Keyboard Shortcuts"
+                                       Style="{StaticResource RelaySectionHeaderTextStyle}"
+                                       Margin="0,0,0,3" />
+                            <TextBlock Text="Trigger instant screen captures or ask with typed prompts from anywhere on Windows."
+                                       Style="{StaticResource RelaySubtitleTextStyle}"
+                                       FontSize="12"
+                                       Margin="0,0,0,14" />
+
+                            <!-- ── Row 1: Quick Capture Shortcut ── -->
+                            <Grid Margin="0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="26" Height="26" CornerRadius="6" Background="{StaticResource RelayAccentSubtleBrush}" Margin="0,0,8,0">
+                                            <ui:SymbolIcon Symbol="Screenshot24" FontSize="15" Foreground="{StaticResource RelayAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock Text="Quick Capture" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <TextBlock Text="Auto-analyze selection" Style="{StaticResource RelayCaptionTextStyle}" Margin="34,2,0,0" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <ComboBox ItemsSource="{Binding AvailableModifiers}"
+                                              SelectedItem="{Binding HotkeyModifiers}"
+                                              Width="135" Height="34"
+                                              VerticalAlignment="Center" />
+                                    <TextBlock Text="+"
+                                               FontSize="14"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource RelayTextDimBrush}"
+                                               Margin="8,0"
+                                               VerticalAlignment="Center" />
+                                    <ComboBox ItemsSource="{Binding AvailableKeys}"
+                                              SelectedItem="{Binding HotkeyKey}"
+                                              Width="90" Height="34"
+                                              VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- ── Subtle Row Divider ── -->
+                            <Border Height="1" Background="#10FFFFFF" Margin="0,10" />
+
+                            <!-- ── Row 2: Ask with Prompt Shortcut ── -->
+                            <Grid Margin="0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="26" Height="26" CornerRadius="6" Background="{StaticResource RelayAccentSubtleBrush}" Margin="0,0,8,0">
+                                            <ui:SymbolIcon Symbol="Chat24" FontSize="15" Foreground="{StaticResource RelayAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock Text="Ask with Prompt" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <TextBlock Text="Capture with attached prompt" Style="{StaticResource RelayCaptionTextStyle}" Margin="34,2,0,0" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <ComboBox ItemsSource="{Binding AvailableModifiers}"
+                                              SelectedItem="{Binding PromptHotkeyModifiers}"
+                                              Width="135" Height="34"
+                                              VerticalAlignment="Center" />
+                                    <TextBlock Text="+"
+                                               FontSize="14"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource RelayTextDimBrush}"
+                                               Margin="8,0"
+                                               VerticalAlignment="Center" />
+                                    <ComboBox ItemsSource="{Binding AvailableKeys}"
+                                              SelectedItem="{Binding PromptHotkeyKey}"
+                                              Width="90" Height="34"
+                                              VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <!-- Card 3: Privacy & Performance                      -->
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <Border Style="{StaticResource RelayCardStyle}" Margin="{StaticResource RelayCardSectionMargin}">
+                        <StackPanel>
+                            <TextBlock Text="Privacy &amp; Performance"
+                                       Style="{StaticResource RelaySectionHeaderTextStyle}"
+                                       Margin="0,0,0,3" />
+                            <TextBlock Text="Control what gets analyzed and stored on your machine."
+                                       Style="{StaticResource RelaySubtitleTextStyle}"
+                                       FontSize="12"
+                                       Margin="0,0,0,12" />
+
+                            <CheckBox IsChecked="{Binding AutoRunOcr}" Content="Run offline Windows OCR on selection for instant text extraction" Margin="0,0,0,8" />
+                            <CheckBox IsChecked="{Binding SaveHistory}" Content="Save query history in local SQLite database" Margin="0,0,0,8" />
+                            <CheckBox IsChecked="{Binding SaveImagesInHistory}" Content="Save thumbnail images with history (disabled by default for privacy)" Margin="0,0,0,8" />
+                            <CheckBox IsChecked="{Binding AutoSearchWeb}" Content="Allow automatic web search for products and errors" Margin="0,0,0,12" />
+
+                            <!-- Excluded Apps Section -->
+                            <Border Height="1" Background="#10FFFFFF" Margin="0,0,0,10" />
+                            <TextBlock Text="Excluded Applications (Blacklist)"
+                                       FontWeight="SemiBold"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                       Margin="0,0,0,2" />
+                            <TextBlock Text="Relay will ignore screen captures over these applications."
+                                       Style="{StaticResource RelayCaptionTextStyle}"
+                                       Margin="0,0,0,8" />
 
                             <Grid Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="8" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <ComboBox Grid.Column="0"
-                                          ItemsSource="{Binding OllamaModels}"
-                                          SelectedItem="{Binding SelectedOllamaModel}"
-                                          IsEditable="True"
-                                          Height="34"
-                                          Margin="0,0,8,0" />
-                                <Button Grid.Column="1"
-                                        Style="{StaticResource ModernActionButtonStyle}"
-                                        Command="{Binding PullModelCommand}"
-                                        Content="⬇ Download Model"
-                                        Height="34"
-                                        Padding="12,0"
-                                        Margin="0,0,6,0" />
-                                <Button Grid.Column="2"
-                                        Style="{StaticResource SubtleActionButtonStyle}"
-                                        Command="{Binding DeleteModelCommand}"
-                                        Content="🗑 Delete Model"
-                                        Foreground="#F43F5E"
-                                        Height="34"
-                                        Padding="10,0"
-                                        Visibility="{Binding IsSelectedOllamaModelInstalled, Converter={StaticResource BoolToVis}}" />
+                                <TextBox Grid.Column="0"
+                                         Style="{StaticResource ModernTextBoxStyle}"
+                                         Text="{Binding NewExcludedApp, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="34"
+                                         ToolTip="Enter executable name (e.g. 1Password, KeePass)" />
+                                <ui:Button Grid.Column="2"
+                                           Appearance="Secondary"
+                                           Command="{Binding AddExcludedAppCommand}"
+                                           Height="34"
+                                           Padding="14,0"
+                                           Cursor="Hand">
+                                    <TextBlock Text="Add App" FontSize="12" />
+                                </ui:Button>
                             </Grid>
 
-                            <!-- Notice shown if model is not installed on disk -->
-                            <Border Background="#15F59E0B" BorderBrush="#35F59E0B" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,10"
-                                    Visibility="{Binding IsSelectedOllamaModelInstalled, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
-                                <TextBlock Text="⚠️ This model is not downloaded yet. Click '⬇ Download Model' to download it (~4.5 GB) before using offline capture."
-                                           FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" />
-                            </Border>
-
-                            <!-- Pull Progress -->
-                            <StackPanel Visibility="{Binding IsPullingModel, Converter={StaticResource BoolToVis}}" Margin="0,0,0,8">
-                                <ProgressBar Value="{Binding OllamaPullProgress}" Maximum="100" Height="6" Margin="0,0,0,4"
-                                             Foreground="{StaticResource AccentEmeraldBrush}" />
-                                <TextBlock Text="{Binding OllamaPullStatus}" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,0" />
-                            </StackPanel>
+                            <ListBox ItemsSource="{Binding ExcludedApplications}" MaxHeight="120">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#08FFFFFF"
+                                                BorderBrush="#15FFFFFF"
+                                                BorderThickness="1"
+                                                CornerRadius="6"
+                                                Padding="10,6"
+                                                Margin="0,0,0,4">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding}"
+                                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                           FontWeight="Medium"
+                                                           FontSize="12"
+                                                           VerticalAlignment="Center" />
+                                                <Button Grid.Column="1"
+                                                        Style="{StaticResource CloseWindowButtonStyle}"
+                                                        Command="{Binding DataContext.RemoveExcludedAppCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="Remove from blacklist"
+                                                        Width="22" Height="22">
+                                                    <TextBlock Text="✕" FontSize="10" Foreground="{StaticResource RelayTextDimBrush}" />
+                                                </Button>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
                         </StackPanel>
+                    </Border>
 
-                        <!-- Status Message for Ollama -->
-                        <TextBlock Text="{Binding StatusMessage}"
-                                   FontSize="12"
-                                   FontWeight="Medium"
-                                   Foreground="{Binding StatusMessage, Converter={StaticResource StatusMessageToBrushConverter}}"
-                                   TextWrapping="Wrap" />
-                    </StackPanel>
-                </Border>
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <!-- Card 4: System & Background Startup                -->
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <Border Style="{StaticResource RelayCardStyle}" Margin="{StaticResource RelayCardSectionMargin}">
+                        <StackPanel>
+                            <TextBlock Text="System &amp; Background Startup"
+                                       Style="{StaticResource RelaySectionHeaderTextStyle}"
+                                       Margin="0,0,0,3" />
+                            <TextBlock Text="Configure Relay to run silently in the system tray."
+                                       Style="{StaticResource RelaySubtitleTextStyle}"
+                                       FontSize="12"
+                                       Margin="0,0,0,12" />
 
-                <!-- Card 2: Global Shortcuts -->
-                <Border Background="{StaticResource BgPanelBrush}" BorderBrush="{StaticResource GlassBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,14">
-                    <StackPanel>
-                        <TextBlock Text="⌨ Global Keyboard Shortcuts" FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4" />
-                        <TextBlock Text="Trigger instant screen captures or ask with typed prompts from anywhere on Windows." FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                            <CheckBox IsChecked="{Binding StartWithWindows}" Content="Start Relay automatically on Windows login" Margin="0,0,0,8" />
+                            <CheckBox IsChecked="{Binding StartMinimizedToTray}" Content="Start minimized to the 'Show hidden icons' tray" Margin="0,0,0,8" />
+                            <CheckBox IsChecked="{Binding ShowTrayNotifications}" Content="Show tray notification banner when Relay launches" Margin="0,0,0,4" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
 
-                        <!-- Quick Capture Shortcut -->
-                        <TextBlock Text="📷 Quick Capture (Auto-Analyze)" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4" />
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="16" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Modifiers" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4" />
-                                <ComboBox ItemsSource="{Binding AvailableModifiers}" SelectedItem="{Binding HotkeyModifiers}" Height="34" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Key" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4" />
-                                <ComboBox ItemsSource="{Binding AvailableKeys}" SelectedItem="{Binding HotkeyKey}" Height="34" />
-                            </StackPanel>
-                        </Grid>
+            <!-- ═══════════════════════════════════════════════════ -->
+            <!-- 2: Footer / Actions (Primary/Secondary Button pairing) -->
+            <!-- ═══════════════════════════════════════════════════ -->
+            <Grid Grid.Row="2" Margin="0,8,0,0">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <!-- Primary: Save Settings -->
+                    <ui:Button Appearance="Primary"
+                               Command="{Binding SaveSettingsCommand}"
+                               Padding="18,8"
+                               Margin="0,0,8,0"
+                               Cursor="Hand">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Save24" FontSize="15" Margin="0,0,6,0" />
+                            <TextBlock Text="Save Settings" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ui:Button>
 
-                        <!-- Prompted Capture Shortcut -->
-                        <TextBlock Text="💬 Ask with Prompt (Attached Input Box)" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4" />
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="16" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Modifiers" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4" />
-                                <ComboBox ItemsSource="{Binding AvailableModifiers}" SelectedItem="{Binding PromptHotkeyModifiers}" Height="34" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Key" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4" />
-                                <ComboBox ItemsSource="{Binding AvailableKeys}" SelectedItem="{Binding PromptHotkeyKey}" Height="34" />
-                            </StackPanel>
-                        </Grid>
-                    </StackPanel>
-                </Border>
-
-                <!-- Card 3: Features & Privacy -->
-                <Border Background="{StaticResource BgPanelBrush}" BorderBrush="{StaticResource GlassBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,14">
-                    <StackPanel>
-                        <TextBlock Text="🔒 Privacy &amp; Performance" FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4" />
-                        <TextBlock Text="Control what gets analyzed and stored on your machine." FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,12" />
-
-                        <CheckBox IsChecked="{Binding AutoRunOcr}" Content="Run offline Windows OCR on selection for instant text extraction" Margin="0,0,0,8" />
-                        <CheckBox IsChecked="{Binding SaveHistory}" Content="Save query history in local SQLite database" Margin="0,0,0,8" />
-                        <CheckBox IsChecked="{Binding SaveImagesInHistory}" Content="Save thumbnail images with history (disabled by default for privacy)" Margin="0,0,0,8" />
-                        <CheckBox IsChecked="{Binding AutoSearchWeb}" Content="Allow automatic web search for products and errors" Margin="0,0,0,12" />
-
-                        <!-- Excluded Apps -->
-                        <TextBlock Text="Excluded Applications (Blacklist)" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,6,0,4" />
-                        <Grid Margin="0,0,0,8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0"
-                                     Style="{StaticResource ModernTextBoxStyle}"
-                                     Text="{Binding NewExcludedApp, UpdateSourceTrigger=PropertyChanged}"
-                                     Height="34"
-                                     Margin="0,0,8,0"
-                                     ToolTip="Enter executable name (e.g. 1Password, KeePass)" />
-                            <Button Grid.Column="1"
-                                     Style="{StaticResource SubtleActionButtonStyle}"
-                                     Command="{Binding AddExcludedAppCommand}"
-                                     Height="34"
-                                     Padding="14,0"
-                                     Content="Add App" />
-                        </Grid>
-
-                        <ListBox ItemsSource="{Binding ExcludedApplications}" MaxHeight="120">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="{StaticResource BgCardBrush}"
-                                            BorderBrush="{StaticResource GlassBorderSubtleBrush}"
-                                            BorderThickness="1"
-                                            CornerRadius="6"
-                                            Padding="10,6"
-                                            Margin="0,0,0,4">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="{Binding}"
-                                                       Foreground="{StaticResource TextPrimaryBrush}"
-                                                       FontWeight="Medium"
-                                                       FontSize="12"
-                                                       VerticalAlignment="Center" />
-                                            <Button Grid.Column="1"
-                                                    Style="{StaticResource CloseWindowButtonStyle}"
-                                                    Command="{Binding DataContext.RemoveExcludedAppCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"
-                                                    ToolTip="Remove from blacklist"
-                                                    Width="22" Height="22">
-                                                <TextBlock Text="✕" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}" />
-                                            </Button>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                    </StackPanel>
-                </Border>
-
-                <!-- Card 4: System & Background Startup -->
-                <Border Background="{StaticResource BgPanelBrush}" BorderBrush="{StaticResource GlassBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,14">
-                    <StackPanel>
-                        <TextBlock Text="🚀 System &amp; Background Startup" FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4" />
-                        <TextBlock Text="Configure Relay to run silently in the system tray." FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,12" />
-
-                        <CheckBox IsChecked="{Binding StartWithWindows}" Content="Start Relay automatically on Windows login" Margin="0,0,0,8" />
-                        <CheckBox IsChecked="{Binding StartMinimizedToTray}" Content="Start minimized to the 'Show hidden icons' tray" Margin="0,0,0,8" />
-                        <CheckBox IsChecked="{Binding ShowTrayNotifications}" Content="Show tray notification banner when Relay launches" Margin="0,0,0,4" />
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-        </ScrollViewer>
-
-        <!-- 2: Footer -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Style="{StaticResource ModernActionButtonStyle}"
-                    Command="{Binding SaveSettingsCommand}"
-                    Content="Save Settings"
-                    Width="120"
-                    Margin="0,0,8,0" />
-            <Button Style="{StaticResource SubtleActionButtonStyle}"
-                    Click="OnCloseClick"
-                    Content="Close"
-                    Width="80" />
-        </StackPanel>
+                    <!-- Secondary: Close -->
+                    <ui:Button Appearance="Secondary"
+                               Click="OnCloseClick"
+                               Padding="16,8"
+                               Cursor="Hand">
+                        <TextBlock Text="Close" FontSize="13" VerticalAlignment="Center" />
+                    </ui:Button>
+                </StackPanel>
+            </Grid>
+        </Grid>
     </Grid>
-</Window>
+</ui:FluentWindow>
