@@ -1,10 +1,11 @@
 using System.Windows;
 using System.Windows.Input;
 using Relay.UI.ViewModels;
+using Wpf.Ui.Controls;
 
 namespace Relay.UI.Views;
 
-public partial class HistoryWindow : Window
+public partial class HistoryWindow : FluentWindow
 {
     private readonly HistoryViewModel _viewModel;
 
