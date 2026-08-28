@@ -10,7 +10,7 @@ public class AppSettings
     /// </summary>
     public string ActiveProvider { get; set; } = "gemini";
     public string EncryptedApiKey { get; set; } = string.Empty;
-    public string SelectedModel { get; set; } = "gemini-flash-latest";
+    public string SelectedModel { get; set; } = "gemini-2.5-flash";
     public string OllamaBaseUrl { get; set; } = "http://localhost:11434";
     public string OllamaModel { get; set; } = "llava";
     public string HotkeyModifiers { get; set; } = "Control";
