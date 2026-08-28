@@ -20,15 +20,10 @@ public class GeminiAiProvider : IAiProvider
     public string DisplayName => "Google Gemini";
     public IReadOnlyList<string> SupportedModels => new[]
     {
-        "gemini-flash-latest",
         "gemini-2.5-flash",
         "gemini-2.0-flash",
         "gemini-1.5-flash",
-        "gemini-3.7-flash",
-        "gemini-3.5-flash",
-        "gemini-3.5-flash-lite",
-        "gemini-3.6-flash",
-        "gemini-pro-latest"
+        "gemini-flash-latest"
     };
 
     private static readonly System.Text.RegularExpressions.Regex DelimiterRegex =
@@ -119,12 +114,10 @@ public class GeminiAiProvider : IAiProvider
                     if (result.Count > 0)
                     {
                         return result
-                            .OrderByDescending(m => m.Equals("gemini-flash-latest", StringComparison.OrdinalIgnoreCase))
-                            .ThenByDescending(m => m.Equals("gemini-2.5-flash", StringComparison.OrdinalIgnoreCase))
+                            .OrderByDescending(m => m.Equals("gemini-2.5-flash", StringComparison.OrdinalIgnoreCase))
                             .ThenByDescending(m => m.Equals("gemini-2.0-flash", StringComparison.OrdinalIgnoreCase))
-                            .ThenByDescending(m => m.Equals("gemini-3.7-flash", StringComparison.OrdinalIgnoreCase))
                             .ThenByDescending(m => m.Equals("gemini-1.5-flash", StringComparison.OrdinalIgnoreCase))
-                            .ThenByDescending(m => m.Equals("gemini-pro-latest", StringComparison.OrdinalIgnoreCase))
+                            .ThenByDescending(m => m.Equals("gemini-flash-latest", StringComparison.OrdinalIgnoreCase))
                             .ThenByDescending(m => m.Contains("flash"))
                             .ThenBy(m => m)
                             .ToList();
@@ -155,7 +148,7 @@ public class GeminiAiProvider : IAiProvider
             yield break;
         }
 
-        string rawModel = _settingsService.CurrentSettings?.SelectedModel ?? "gemini-flash-latest";
+        string rawModel = _settingsService.CurrentSettings?.SelectedModel ?? "gemini-2.5-flash";
         string cleanModel = rawModel.Trim();
         if (cleanModel.StartsWith("models/", StringComparison.OrdinalIgnoreCase))
         {
@@ -166,19 +159,18 @@ public class GeminiAiProvider : IAiProvider
         var candidateModels = new List<string>();
         if (!string.IsNullOrWhiteSpace(cleanModel) &&
             !cleanModel.Equals("gemini-pro", StringComparison.OrdinalIgnoreCase) &&
-            !cleanModel.Equals("gemini-1.0-pro", StringComparison.OrdinalIgnoreCase))
+            !cleanModel.Equals("gemini-1.0-pro", StringComparison.OrdinalIgnoreCase) &&
+            !cleanModel.Equals("gemini-pro-latest", StringComparison.OrdinalIgnoreCase))
         {
             candidateModels.Add(cleanModel);
         }
 
         var standardFallbacks = new[]
         {
-            "gemini-flash-latest",
             "gemini-2.5-flash",
             "gemini-2.0-flash",
             "gemini-1.5-flash",
-            "gemini-3.7-flash",
-            "gemini-pro-latest"
+            "gemini-flash-latest"
         };
 
         foreach (var fb in standardFallbacks)
