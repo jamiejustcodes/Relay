@@ -137,6 +137,41 @@ public class OllamaProviderTests
         actions[0].ActionType.Should().Be("SEARCH");
     }
 
+    [Fact]
+    public void TryExtractHeaderJson_WhenCodeFenceClosed_ShouldExtractMetadataAndEndIndex()
+    {
+        string text = "```json\n{\n  \"intent\": \"DEBUG\",\n  \"title\": \"Syntax Error\",\n  \"summary\": \"Missing semicolon\"\n}\n```\n### Fix\nAdd a semicolon.";
+        bool success = OllamaAiProvider.TryExtractHeaderJson(text, out var intent, out var title, out var summary, out var actions, out int jsonEndIdx);
+
+        success.Should().BeTrue();
+        intent.Should().Be(IntentType.Debug);
+        title.Should().Be("Syntax Error");
+        summary.Should().Be("Missing semicolon");
+        jsonEndIdx.Should().BeGreaterThan(0);
+        text.Substring(jsonEndIdx).TrimStart().Should().StartWith("### Fix");
+    }
+
+    [Fact]
+    public void TryExtractHeaderJson_WhenRawJsonClosed_ShouldExtractMetadataAndEndIndex()
+    {
+        string text = "{\n  \"intent\": \"EXPLAIN\",\n  \"title\": \"Process Map\"\n}\n---CONTENT---\nHere is the explanation.";
+        bool success = OllamaAiProvider.TryExtractHeaderJson(text, out var intent, out var title, out var summary, out var actions, out int jsonEndIdx);
+
+        success.Should().BeTrue();
+        intent.Should().Be(IntentType.Explain);
+        title.Should().Be("Process Map");
+        jsonEndIdx.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public void TryExtractHeaderJson_WhenInvalidJson_ShouldReturnFalse()
+    {
+        string text = "This is just regular text with no json at all.";
+        bool success = OllamaAiProvider.TryExtractHeaderJson(text, out _, out _, out _, out _, out _);
+
+        success.Should().BeFalse();
+    }
+
     // ──────────────────────────────────────────────────────────
     // AiProviderFactory Tests
     // ──────────────────────────────────────────────────────────
