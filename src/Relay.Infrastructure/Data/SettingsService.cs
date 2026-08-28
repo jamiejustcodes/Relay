@@ -47,16 +47,15 @@ public class SettingsService : ISettingsService
                 var loaded = JsonSerializer.Deserialize<AppSettings>(json, options);
                 if (loaded != null)
                 {
-                    // Auto-migrate any deprecated or non-working models to gemini-flash-latest
+                    // Auto-migrate any deprecated or non-working models
                     if (string.IsNullOrWhiteSpace(loaded.SelectedModel) ||
-                        loaded.SelectedModel.StartsWith("gemini-1.", StringComparison.OrdinalIgnoreCase) ||
-                        loaded.SelectedModel.StartsWith("gemini-2.", StringComparison.OrdinalIgnoreCase) ||
                         loaded.SelectedModel.Equals("gemini-pro", StringComparison.OrdinalIgnoreCase) ||
                         loaded.SelectedModel.Equals("gemini-1.0-pro", StringComparison.OrdinalIgnoreCase) ||
                         loaded.SelectedModel.Equals("gemini-pro-vision", StringComparison.OrdinalIgnoreCase) ||
+                        loaded.SelectedModel.Equals("gemini-flash-latest", StringComparison.OrdinalIgnoreCase) ||
                         loaded.SelectedModel.Contains("exp", StringComparison.OrdinalIgnoreCase))
                     {
-                        loaded.SelectedModel = "gemini-flash-latest";
+                        loaded.SelectedModel = "gemini-2.5-flash";
                     }
 
                     if (string.IsNullOrWhiteSpace(loaded.OllamaModel) ||
