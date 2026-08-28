@@ -21,12 +21,18 @@ public class GeminiAiProvider : IAiProvider
     public IReadOnlyList<string> SupportedModels => new[]
     {
         "gemini-flash-latest",
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
         "gemini-3.7-flash",
         "gemini-3.5-flash",
         "gemini-3.5-flash-lite",
         "gemini-3.6-flash",
         "gemini-pro-latest"
     };
+
+    private static readonly System.Text.RegularExpressions.Regex DelimiterRegex =
+        new(@"---+\s*content\s*---+", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
 
     public GeminiAiProvider(HttpClient httpClient, ISettingsService settingsService)
     {
@@ -99,13 +105,9 @@ public class GeminiAiProvider : IAiProvider
                                                            name.Contains("clip", StringComparison.OrdinalIgnoreCase) ||
                                                            name.Contains("gemma", StringComparison.OrdinalIgnoreCase) ||
                                                            name.Contains("learnlm", StringComparison.OrdinalIgnoreCase) ||
-                                                           name.StartsWith("gemini-1.", StringComparison.OrdinalIgnoreCase) ||
-                                                           name.StartsWith("gemini-2.0", StringComparison.OrdinalIgnoreCase) ||
                                                            name.Equals("gemini-pro", StringComparison.OrdinalIgnoreCase) ||
                                                            name.Equals("gemini-1.0-pro", StringComparison.OrdinalIgnoreCase) ||
-                                                           name.Equals("gemini-pro-vision", StringComparison.OrdinalIgnoreCase) ||
-                                                           name.Equals("gemini-2.5-flash", StringComparison.OrdinalIgnoreCase) ||
-                                                           name.Equals("gemini-2.5-pro", StringComparison.OrdinalIgnoreCase);
+                                                           name.Equals("gemini-pro-vision", StringComparison.OrdinalIgnoreCase);
 
                             if (!isDeprecatedOrSpecialized && name.StartsWith("gemini", StringComparison.OrdinalIgnoreCase))
                             {
@@ -118,10 +120,10 @@ public class GeminiAiProvider : IAiProvider
                     {
                         return result
                             .OrderByDescending(m => m.Equals("gemini-flash-latest", StringComparison.OrdinalIgnoreCase))
+                            .ThenByDescending(m => m.Equals("gemini-2.5-flash", StringComparison.OrdinalIgnoreCase))
+                            .ThenByDescending(m => m.Equals("gemini-2.0-flash", StringComparison.OrdinalIgnoreCase))
                             .ThenByDescending(m => m.Equals("gemini-3.7-flash", StringComparison.OrdinalIgnoreCase))
-                            .ThenByDescending(m => m.Equals("gemini-3.5-flash", StringComparison.OrdinalIgnoreCase))
-                            .ThenByDescending(m => m.Equals("gemini-3.5-flash-lite", StringComparison.OrdinalIgnoreCase))
-                            .ThenByDescending(m => m.Equals("gemini-3.6-flash", StringComparison.OrdinalIgnoreCase))
+                            .ThenByDescending(m => m.Equals("gemini-1.5-flash", StringComparison.OrdinalIgnoreCase))
                             .ThenByDescending(m => m.Equals("gemini-pro-latest", StringComparison.OrdinalIgnoreCase))
                             .ThenByDescending(m => m.Contains("flash"))
                             .ThenBy(m => m)
@@ -163,8 +165,6 @@ public class GeminiAiProvider : IAiProvider
         // Build candidate fallback list to ensure user never gets a dead end
         var candidateModels = new List<string>();
         if (!string.IsNullOrWhiteSpace(cleanModel) &&
-            !cleanModel.StartsWith("gemini-1.", StringComparison.OrdinalIgnoreCase) &&
-            !cleanModel.StartsWith("gemini-2.", StringComparison.OrdinalIgnoreCase) &&
             !cleanModel.Equals("gemini-pro", StringComparison.OrdinalIgnoreCase) &&
             !cleanModel.Equals("gemini-1.0-pro", StringComparison.OrdinalIgnoreCase))
         {
@@ -174,10 +174,10 @@ public class GeminiAiProvider : IAiProvider
         var standardFallbacks = new[]
         {
             "gemini-flash-latest",
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
+            "gemini-1.5-flash",
             "gemini-3.7-flash",
-            "gemini-3.5-flash",
-            "gemini-3.5-flash-lite",
-            "gemini-3.6-flash",
             "gemini-pro-latest"
         };
 
@@ -197,6 +197,8 @@ public class GeminiAiProvider : IAiProvider
 
         foreach (var modelToTry in candidateModels)
         {
+            if (ct.IsCancellationRequested) break;
+
             string url = $"https://generativelanguage.googleapis.com/v1beta/models/{modelToTry}:streamGenerateContent?alt=sse&key={apiKey.Trim()}";
             var jsonContent = new StringContent(payloadJson, Encoding.UTF8, "application/json");
             var httpRequest = new HttpRequestMessage(HttpMethod.Post, url) { Content = jsonContent };
@@ -226,28 +228,28 @@ public class GeminiAiProvider : IAiProvider
                     }
                     catch { }
 
-                    // If error is non-multimodal (400), model not found/deprecated (404), or quota exhausted on this specific model (429), continue trying fallback candidate models!
+                    if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized || response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                    {
+                        lastError = parsedMsg ?? "Gemini API key is invalid or unauthorized. Please verify your API key in Settings.";
+                        break;
+                    }
+
                     if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
                     {
-                        lastError = parsedMsg ?? "Model request failed. Trying fallback model...";
+                        lastError = parsedMsg ?? $"Model '{modelToTry}' request failed. Trying fallback model...";
                         continue;
                     }
 
                     if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     {
-                        lastError = $"Model '{modelToTry}' is no longer available. Switched to fallback model...";
+                        lastError = $"Model '{modelToTry}' is no longer available. Trying fallback model...";
                         continue;
                     }
 
                     if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                     {
-                        lastError = parsedMsg ?? "Gemini API quota or rate limit exceeded on this model. Trying fallback model...";
+                        lastError = parsedMsg ?? "Gemini API rate limit exceeded on this model. Trying fallback model...";
                         continue;
-                    }
-                    else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized || response.StatusCode == System.Net.HttpStatusCode.Forbidden)
-                    {
-                        lastError = parsedMsg ?? "Gemini API key is invalid or unauthorized. Please verify your API key in Settings.";
-                        break;
                     }
                     else
                     {
@@ -258,6 +260,7 @@ public class GeminiAiProvider : IAiProvider
             catch (Exception ex)
             {
                 lastError = $"Network connection error: {ex.Message}";
+                break;
             }
         }
 
@@ -282,9 +285,32 @@ public class GeminiAiProvider : IAiProvider
         string parsedSummary = string.Empty;
         List<ActionItem> parsedActions = new();
 
+        using var readTimeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+
         while (!ct.IsCancellationRequested)
         {
-            string? line = await reader.ReadLineAsync(ct);
+            string? line = null;
+            bool readTimedOut = false;
+            try
+            {
+                readTimeoutCts.CancelAfter(TimeSpan.FromSeconds(35));
+                line = await reader.ReadLineAsync(readTimeoutCts.Token);
+            }
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+            {
+                readTimedOut = true;
+            }
+
+            if (readTimedOut)
+            {
+                yield return new AiStreamChunk
+                {
+                    IsComplete = true,
+                    ErrorMessage = "Streaming response from Gemini timed out."
+                };
+                yield break;
+            }
+
             if (line == null) break;
 
             if (line.StartsWith("data: "))
@@ -292,26 +318,47 @@ public class GeminiAiProvider : IAiProvider
                 string jsonPayload = line.Substring(6).Trim();
                 if (string.IsNullOrWhiteSpace(jsonPayload)) continue;
 
-                string? chunkText = ExtractTextFromChunk(jsonPayload);
+                var (chunkText, streamError) = ProcessSseJsonChunk(jsonPayload);
+                if (!string.IsNullOrEmpty(streamError))
+                {
+                    yield return new AiStreamChunk
+                    {
+                        IsComplete = true,
+                        ErrorMessage = streamError
+                    };
+                    yield break;
+                }
+
                 if (!string.IsNullOrEmpty(chunkText))
                 {
                     fullAccumulatedText.Append(chunkText);
-                    streamBuffer.Append(chunkText);
 
-                    // Check if JSON header is present and can be parsed
-                    if (!headerParsed)
+                    if (headerParsed)
                     {
-                        string currentTotal = streamBuffer.ToString();
-                        int contentDelimiterIdx = currentTotal.IndexOf("---CONTENT---", StringComparison.Ordinal);
-
-                        if (contentDelimiterIdx >= 0)
+                        yield return new AiStreamChunk
                         {
-                            string jsonBlock = currentTotal.Substring(0, contentDelimiterIdx);
-                            ParseHeaderJson(jsonBlock, out detectedIntent, out parsedTitle, out parsedSummary, out parsedActions);
+                            TextDelta = chunkText,
+                            DetectedIntent = detectedIntent,
+                            Title = parsedTitle,
+                            Summary = parsedSummary,
+                            ActionItems = parsedActions,
+                            IsComplete = false
+                        };
+                    }
+                    else
+                    {
+                        streamBuffer.Append(chunkText);
+                        string currentTotal = streamBuffer.ToString();
+
+                        // 1. Try delimiter match (e.g. ---CONTENT---, --- CONTENT ---)
+                        var delimiterMatch = DelimiterRegex.Match(currentTotal);
+                        if (delimiterMatch.Success)
+                        {
+                            string headerPart = currentTotal.Substring(0, delimiterMatch.Index);
+                            TryExtractHeaderJson(headerPart, out detectedIntent, out parsedTitle, out parsedSummary, out parsedActions, out _);
                             headerParsed = true;
 
-                            // Emit header info and the remainder of content
-                            string remainingContent = currentTotal.Substring(contentDelimiterIdx + "---CONTENT---".Length).TrimStart();
+                            string remainingContent = currentTotal.Substring(delimiterMatch.Index + delimiterMatch.Length).TrimStart('\r', '\n');
                             streamBuffer.Clear();
 
                             yield return new AiStreamChunk
@@ -324,29 +371,111 @@ public class GeminiAiProvider : IAiProvider
                                 IsComplete = false
                             };
                         }
-                    }
-                    else
-                    {
-                        // Header already parsed, stream chunk directly
-                        yield return new AiStreamChunk
+                        // 2. Try closed JSON code fence or raw JSON block
+                        else if (TryExtractHeaderJson(currentTotal, out var pIntent, out var pTitle, out var pSummary, out var pActions, out int jsonEndIdx))
                         {
-                            TextDelta = chunkText,
-                            DetectedIntent = detectedIntent,
-                            Title = parsedTitle,
-                            Summary = parsedSummary,
-                            ActionItems = parsedActions,
-                            IsComplete = false
-                        };
+                            detectedIntent = pIntent;
+                            parsedTitle = pTitle;
+                            parsedSummary = pSummary;
+                            parsedActions = pActions;
+                            headerParsed = true;
+
+                            string remainingContent = currentTotal.Substring(jsonEndIdx).TrimStart();
+                            if (DelimiterRegex.IsMatch(remainingContent))
+                            {
+                                remainingContent = DelimiterRegex.Replace(remainingContent, "", 1).TrimStart('\r', '\n');
+                            }
+                            else if (remainingContent.StartsWith("---", StringComparison.Ordinal))
+                            {
+                                remainingContent = remainingContent.TrimStart('-').TrimStart();
+                            }
+
+                            streamBuffer.Clear();
+
+                            yield return new AiStreamChunk
+                            {
+                                TextDelta = remainingContent,
+                                DetectedIntent = detectedIntent,
+                                Title = parsedTitle,
+                                Summary = parsedSummary,
+                                ActionItems = parsedActions,
+                                IsComplete = false
+                            };
+                        }
+                        // 3. Fallback: If buffer has grown significantly without any JSON header markers, start streaming directly
+                        else if (currentTotal.Length > 80 &&
+                                 !currentTotal.TrimStart().StartsWith('{') &&
+                                 !currentTotal.TrimStart().StartsWith("```") &&
+                                 !currentTotal.Contains("```json", StringComparison.OrdinalIgnoreCase))
+                        {
+                            headerParsed = true;
+                            streamBuffer.Clear();
+
+                            yield return new AiStreamChunk
+                            {
+                                TextDelta = currentTotal,
+                                DetectedIntent = detectedIntent,
+                                Title = parsedTitle,
+                                Summary = parsedSummary,
+                                ActionItems = parsedActions,
+                                IsComplete = false
+                            };
+                        }
                     }
                 }
             }
         }
 
-        // Final completion chunk
+        // Completion & un-emitted buffer flush guarantee
         if (!headerParsed)
         {
             string full = fullAccumulatedText.ToString();
-            ParseHeaderJson(full, out detectedIntent, out parsedTitle, out parsedSummary, out parsedActions);
+            if (TryExtractHeaderJson(full, out var finIntent, out var finTitle, out var finSummary, out var finActions, out int finEndIdx))
+            {
+                detectedIntent = finIntent;
+                parsedTitle = finTitle;
+                parsedSummary = finSummary;
+                parsedActions = finActions;
+
+                string remaining = full.Substring(finEndIdx).TrimStart();
+                if (DelimiterRegex.IsMatch(remaining))
+                {
+                    remaining = DelimiterRegex.Replace(remaining, "", 1).TrimStart('\r', '\n');
+                }
+                else if (remaining.StartsWith("---", StringComparison.Ordinal))
+                {
+                    remaining = remaining.TrimStart('-').TrimStart();
+                }
+
+                if (!string.IsNullOrEmpty(remaining))
+                {
+                    yield return new AiStreamChunk
+                    {
+                        TextDelta = remaining,
+                        DetectedIntent = detectedIntent,
+                        Title = parsedTitle,
+                        Summary = parsedSummary,
+                        ActionItems = parsedActions,
+                        IsComplete = false
+                    };
+                }
+            }
+            else
+            {
+                // No JSON header at all in response — emit the entire full text as markdown content
+                if (!string.IsNullOrEmpty(full))
+                {
+                    yield return new AiStreamChunk
+                    {
+                        TextDelta = full,
+                        DetectedIntent = detectedIntent,
+                        Title = parsedTitle,
+                        Summary = parsedSummary,
+                        ActionItems = parsedActions,
+                        IsComplete = false
+                    };
+                }
+            }
         }
 
         yield return new AiStreamChunk
@@ -473,19 +602,59 @@ public class GeminiAiProvider : IAiProvider
         return root;
     }
 
-    private static string? ExtractTextFromChunk(string sseJson)
+    private static (string? Text, string? ErrorMessage) ProcessSseJsonChunk(string sseJson)
     {
         try
         {
             var node = JsonNode.Parse(sseJson);
-            var candidates = node?["candidates"]?.AsArray();
+            if (node == null) return (null, null);
+
+            // 1. Check for API error node
+            var errorNode = node["error"];
+            if (errorNode != null)
+            {
+                string errorMsg = errorNode["message"]?.ToString() ?? "Gemini API error during stream generation.";
+                return (null, errorMsg);
+            }
+
+            // 2. Check for prompt safety blocks
+            var blockReason = node["promptFeedback"]?["blockReason"]?.ToString();
+            if (!string.IsNullOrEmpty(blockReason))
+            {
+                return (null, $"Gemini analysis was blocked by safety filters ({blockReason}).");
+            }
+
+            // 3. Check candidates & candidate finish reasons
+            var candidates = node["candidates"]?.AsArray();
             if (candidates != null && candidates.Count > 0)
             {
-                var parts = candidates[0]?["content"]?["parts"]?.AsArray();
-                if (parts != null && parts.Count > 0)
+                var firstCandidate = candidates[0];
+                var finishReason = firstCandidate?["finishReason"]?.ToString();
+                if (finishReason == "SAFETY" || finishReason == "RECITATION" || finishReason == "BLOCKLIST" || finishReason == "PROHIBITED_CONTENT" || finishReason == "SPII")
                 {
-                    var textNode = parts[0]?["text"];
-                    return textNode?.ToString();
+                    return (null, $"Gemini analysis could not be completed due to safety policy ({finishReason}).");
+                }
+
+                var parts = firstCandidate?["content"]?["parts"]?.AsArray();
+                if (parts != null)
+                {
+                    var sbPart = new StringBuilder();
+                    foreach (var part in parts)
+                    {
+                        bool isThought = part?["thought"]?.GetValue<bool>() ?? false;
+                        if (!isThought)
+                        {
+                            var text = part?["text"]?.ToString();
+                            if (!string.IsNullOrEmpty(text))
+                            {
+                                sbPart.Append(text);
+                            }
+                        }
+                    }
+                    if (sbPart.Length > 0)
+                    {
+                        return (sbPart.ToString(), null);
+                    }
                 }
             }
         }
@@ -493,72 +662,148 @@ public class GeminiAiProvider : IAiProvider
         {
             // Ignore malformed partial chunks
         }
-        return null;
+        return (null, null);
     }
 
-    private static void ParseHeaderJson(
+    internal static bool TryExtractHeaderJson(
+        string text,
+        out IntentType intent,
+        out string title,
+        out string summary,
+        out List<ActionItem> actions,
+        out int jsonEndIndex)
+    {
+        intent = IntentType.General;
+        title = string.Empty;
+        summary = string.Empty;
+        actions = new List<ActionItem>();
+        jsonEndIndex = -1;
+
+        if (string.IsNullOrWhiteSpace(text))
+            return false;
+
+        int startIdx = text.IndexOf('{');
+        if (startIdx < 0) return false;
+
+        // Track balanced braces
+        int openBraces = 0;
+        int closeIdx = -1;
+        bool inString = false;
+        bool isEscaped = false;
+
+        for (int i = startIdx; i < text.Length; i++)
+        {
+            char c = text[i];
+            if (isEscaped)
+            {
+                isEscaped = false;
+                continue;
+            }
+
+            if (c == '\\')
+            {
+                isEscaped = true;
+                continue;
+            }
+
+            if (c == '"')
+            {
+                inString = !inString;
+                continue;
+            }
+
+            if (!inString)
+            {
+                if (c == '{')
+                {
+                    openBraces++;
+                }
+                else if (c == '}')
+                {
+                    openBraces--;
+                    if (openBraces == 0)
+                    {
+                        closeIdx = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (closeIdx > startIdx)
+        {
+            string candidateJson = text.Substring(startIdx, closeIdx - startIdx + 1);
+            try
+            {
+                using var doc = JsonDocument.Parse(candidateJson);
+                var root = doc.RootElement;
+
+                bool hasIntent = root.TryGetProperty("intent", out var intentProp);
+                bool hasTitle = root.TryGetProperty("title", out var titleProp);
+                bool hasSummary = root.TryGetProperty("summary", out var summaryProp);
+
+                if (hasIntent || hasTitle || hasSummary)
+                {
+                    if (hasIntent)
+                    {
+                        string intentStr = intentProp.GetString() ?? "";
+                        if (Enum.TryParse<IntentType>(intentStr, true, out var parsed))
+                        {
+                            intent = parsed;
+                        }
+                    }
+
+                    if (hasTitle)
+                    {
+                        title = titleProp.GetString() ?? "";
+                    }
+
+                    if (hasSummary)
+                    {
+                        summary = summaryProp.GetString() ?? "";
+                    }
+
+                    if (root.TryGetProperty("actionItems", out var actionsProp) && actionsProp.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var item in actionsProp.EnumerateArray())
+                        {
+                            string label = item.TryGetProperty("label", out var lp) ? lp.GetString() ?? "" : "";
+                            string actionType = item.TryGetProperty("actionType", out var atp) ? atp.GetString() ?? "COPY" : "COPY";
+                            string? payload = item.TryGetProperty("payload", out var pp) ? pp.GetString() : null;
+                            string? icon = item.TryGetProperty("icon", out var ip) ? ip.GetString() : null;
+
+                            if (!string.IsNullOrEmpty(label))
+                            {
+                                actions.Add(new ActionItem(label, actionType, payload, icon));
+                            }
+                        }
+                    }
+
+                    jsonEndIndex = closeIdx + 1;
+                    int nextCodeFence = text.IndexOf("```", jsonEndIndex, StringComparison.Ordinal);
+                    if (nextCodeFence >= 0 && nextCodeFence <= jsonEndIndex + 10)
+                    {
+                        jsonEndIndex = nextCodeFence + 3;
+                    }
+                    return true;
+                }
+            }
+            catch
+            {
+                // Not valid JSON
+            }
+        }
+
+        return false;
+    }
+
+    internal static void ParseHeaderJson(
         string rawHeader, 
         out IntentType intent, 
         out string title, 
         out string summary, 
         out List<ActionItem> actions)
     {
-        intent = IntentType.General;
-        title = string.Empty;
-        summary = string.Empty;
-        actions = new List<ActionItem>();
-
-        try
-        {
-            string clean = rawHeader.Trim();
-            int startIdx = clean.IndexOf('{');
-            int endIdx = clean.LastIndexOf('}');
-
-            if (startIdx >= 0 && endIdx > startIdx)
-            {
-                string jsonStr = clean.Substring(startIdx, endIdx - startIdx + 1);
-                var doc = JsonDocument.Parse(jsonStr);
-                var root = doc.RootElement;
-
-                if (root.TryGetProperty("intent", out var intentProp))
-                {
-                    string intentStr = intentProp.GetString() ?? "";
-                    if (Enum.TryParse<IntentType>(intentStr, true, out var parsed))
-                    {
-                        intent = parsed;
-                    }
-                }
-
-                if (root.TryGetProperty("title", out var titleProp))
-                {
-                    title = titleProp.GetString() ?? "";
-                }
-
-                if (root.TryGetProperty("summary", out var summaryProp))
-                {
-                    summary = summaryProp.GetString() ?? "";
-                }
-
-                if (root.TryGetProperty("actionItems", out var actionsProp) && actionsProp.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var item in actionsProp.EnumerateArray())
-                    {
-                        string label = item.TryGetProperty("label", out var lp) ? lp.GetString() ?? "" : "";
-                        string actionType = item.TryGetProperty("actionType", out var atp) ? atp.GetString() ?? "COPY" : "COPY";
-                        string? payload = item.TryGetProperty("payload", out var pp) ? pp.GetString() : null;
-                        string? icon = item.TryGetProperty("icon", out var ip) ? ip.GetString() : null;
-
-                        if (!string.IsNullOrEmpty(label))
-                        {
-                            actions.Add(new ActionItem(label, actionType, payload, icon));
-                        }
-                    }
-                }
-            }
-        }
-        catch
-        {
-            // If JSON fails to parse, leave defaults
-        }
+        TryExtractHeaderJson(rawHeader, out intent, out title, out summary, out actions, out _);
     }
 }
