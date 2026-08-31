@@ -32,7 +32,7 @@ public class WindowsStartupService : IStartupService
     {
         try
         {
-            using var key = Registry.CurrentUser.OpenSubKey(RunRegistryKey, true);
+            using var key = Registry.CurrentUser.CreateSubKey(RunRegistryKey, true);
             if (key == null) return false;
 
             if (enable)
@@ -43,7 +43,10 @@ public class WindowsStartupService : IStartupService
                     exePath = Process.GetCurrentProcess().MainModule?.FileName;
                 }
 
-                if (string.IsNullOrWhiteSpace(exePath)) return false;
+                if (string.IsNullOrWhiteSpace(exePath))
+                {
+                    exePath = "Relay.exe";
+                }
 
                 string command = startMinimized ? $"\"{exePath}\" --minimized" : $"\"{exePath}\"";
                 key.SetValue(AppName, command);
