@@ -6,6 +6,7 @@
 
 Think of it as **Google Lens for the entire desktop**, built with **.NET 10 (WPF + Win32)**, **Gemini Multimodal Vision**, and **Offline Windows OCR**.
 
+[![CI & Deployment](https://github.com/jamiejustcodes/Relay/actions/workflows/ci-deploy.yml/badge.svg)](https://github.com/jamiejustcodes/Relay/actions/workflows/ci-deploy.yml)
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![Windows 11](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D4?logo=windows)](https://microsoft.com)
 [![Gemini Multimodal](https://img.shields.io/badge/AI-Google%20Gemini%20Flash--Lite-4285F4?logo=google)](https://ai.google.dev/)
