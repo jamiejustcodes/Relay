@@ -12,6 +12,23 @@ Think of it as **Google Lens for the entire desktop**, built with **.NET 10 (WPF
 [![Gemini Multimodal](https://img.shields.io/badge/AI-Google%20Gemini%20Flash--Lite-4285F4?logo=google)](https://ai.google.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+<br/>
+
+### 🖥️ Native Desktop Experience
+<p align="center">
+  <img src="media/relay-preview.png" alt="Relay Desktop Interface Preview" width="620" />
+</p>
+
+### ⚡ Live Demonstration
+<p align="center">
+  <video src="https://github.com/user-attachments/assets/RelayClip.mp4" width="720" controls="controls">
+    <video src="media/RelayClip.mp4" width="720" controls="controls"></video>
+  </video>
+</p>
+<p align="center">
+  <a href="media/RelayClip.mp4">▶️ <b>Watch / Download Direct Video Clip (RelayClip.mp4)</b></a>
+</p>
+
 </div>
 
 ---
