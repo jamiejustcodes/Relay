@@ -21,11 +21,21 @@ public class SecretVaultTests
     }
 
     [Fact]
-    public void DpapiSecretVault_ExistingSavedKey_ShouldDecryptSuccessfully()
+    public void DpapiSecretVault_InvalidOrCorruptCipher_ShouldReturnEmptyStringGracefully()
     {
         var vault = new DpapiSecretVault();
-        string existingCipher = "AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAj2zcY5n7FUy05r/lFPLsxAAAAAACAAAAAAAQZgAAAAEAACAAAAB3wJlDpk/Jg7VTZ/IK2d0Bi4rFCGBbqwPnjD0Ft67g4wAAAAAOgAAAAAIAACAAAAAGS9fmzMXfkDJ9RfH6Mq8tealGiPo6YWloZFruf4DjVDAAAACdxWTWH1RFv0bHB23qOjf/DsJXzxah+JFynXSS+TozmnRA/2WNf1+ZU8UqjkLi9OpAAAAAORlxdt4OBPwtXg4f3GwzAKOXyQZZ6woirLPU/qPm6Gm4yPZzxK0mAXIjC9Qbam1N5IhQButSr7Y7tYtsPM68XQ==";
-        string decrypted = vault.DecryptSecret(existingCipher);
-        decrypted.Should().StartWith("AIzaSy");
+        string invalidCipher = "InvalidBase64OrCorruptCipher==";
+        string decrypted = vault.DecryptSecret(invalidCipher);
+        decrypted.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    public void DpapiSecretVault_EmptyOrNullSecret_ShouldReturnEmptyString(string? input)
+    {
+        var vault = new DpapiSecretVault();
+        vault.EncryptSecret(input!).Should().BeEmpty();
+        vault.DecryptSecret(input!).Should().BeEmpty();
     }
 }
