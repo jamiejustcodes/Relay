@@ -1,0 +1,75 @@
+name: CI & Deployment
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*.*.*'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  deployments: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test-and-deploy:
+    name: Test, Build & Deploy
+    runs-on: windows-latest
+
+    # This environment registration grants the official deployment tick on GitHub repo overview
+    environment:
+      name: production
+      url: https://github.com/${{ github.repository }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            10.0.x
+
+      - name: Restore Dependencies
+        run: |
+          dotnet restore src/Relay.UI/Relay.UI.csproj
+          dotnet restore tests/Relay.Tests/Relay.Tests.csproj
+
+      - name: Run Test Suite (CI)
+        run: |
+          dotnet test tests/Relay.Tests/Relay.Tests.csproj --no-restore --verbosity normal
+
+      - name: Build Release Binary
+        run: |
+          dotnet build src/Relay.UI/Relay.UI.csproj --configuration Release --no-restore
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Package Windows Installer
+        shell: powershell
+        run: |
+          .\build-installer.ps1 -DeploymentMode FrameworkDependent
+
+      - name: Upload Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RelaySetup-Installer
+          path: dist/RelaySetup.exe
+          if-no-files-found: warn
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/RelaySetup.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
